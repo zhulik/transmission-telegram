@@ -90,7 +90,6 @@ const (
 )
 
 var (
-	Bot     *tgbotapi.BotAPI
 	Updates <-chan tgbotapi.Update
 
 	mdReplacer = strings.NewReplacer("*", "•",
@@ -160,17 +159,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	Bot, err = tgbotapi.NewBotAPI(botToken)
+	bot, err := tgbotapi.NewBotAPI(botToken)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "[ERROR] Telegram: %s", err)
 		os.Exit(1)
 	}
-	log.Printf("[INFO] Authorized: %s", Bot.Self.UserName)
+	log.Printf("[INFO] Authorized: %s", bot.Self.UserName)
 
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 
-	Updates, err = Bot.GetUpdatesChan(u)
+	Updates, err = bot.GetUpdatesChan(u)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "[ERROR] Telegram: %s", err)
 		os.Exit(1)
@@ -194,78 +193,78 @@ func main() {
 
 		switch command {
 		case "list", "/list", "li", "/li":
-			go list(client, update, tokens[1:])
+			go list(bot, client, update, tokens[1:])
 
 		case "downs", "/downs", "dl", "/dl":
-			go downs(client, update)
+			go downs(bot, client, update)
 
 		case "seeding", "/seeding", "sd", "/sd":
-			go seeding(client, update)
+			go seeding(bot, client, update)
 
 		case "paused", "/paused", "pa", "/pa":
-			go paused(client, update)
+			go paused(bot, client, update)
 
 		case "checking", "/checking", "ch", "/ch":
-			go checking(client, update)
+			go checking(bot, client, update)
 
 		case "active", "/active", "ac", "/ac":
-			go active(client, update)
+			go active(bot, client, update)
 
 		case "errors", "/errors", "er", "/er":
-			go errors(client, update)
+			go errors(bot, client, update)
 
 		case "sort", "/sort", "so", "/so":
-			go sort(client, update, tokens[1:])
+			go sort(bot, client, update, tokens[1:])
 
 		case "trackers", "/trackers", "tr", "/tr":
-			go trackers(client, update)
+			go trackers(bot, client, update)
 
 		case "add", "/add", "ad", "/ad":
-			go add(client, update, tokens[1:])
+			go add(bot, client, update, tokens[1:])
 
 		case "search", "/search", "se", "/se":
-			go search(client, update, tokens[1:])
+			go search(bot, client, update, tokens[1:])
 
 		case "info", "/info", "in", "/in":
-			go info(client, update, tokens[1:])
+			go info(bot, client, update, tokens[1:])
 
 		case "stop", "/stop", "sp", "/sp":
-			go stop(client, update, tokens[1:])
+			go stop(bot, client, update, tokens[1:])
 
 		case "start", "/start", "st", "/st":
-			go start(client, update, tokens[1:])
+			go start(bot, client, update, tokens[1:])
 
 		case "check", "/check", "ck", "/ck":
-			go check(client, update, tokens[1:])
+			go check(bot, client, update, tokens[1:])
 
 		case "stats", "/stats", "sa", "/sa":
-			go stats(client, update)
+			go stats(bot, client, update)
 
 		case "speed", "/speed", "ss", "/ss":
-			go speed(client, update)
+			go speed(bot, client, update)
 
 		case "count", "/count", "co", "/co":
-			go count(client, update)
+			go count(bot, client, update)
 
 		case "del", "/del":
-			go del(client, update, tokens[1:])
+			go del(bot, client, update, tokens[1:])
 
 		case "deldata", "/deldata":
-			go deldata(client, update, tokens[1:])
+			go deldata(bot, client, update, tokens[1:])
 
 		case "help", "/help":
-			go send(HELP, update.Message.Chat.ID, true)
+			go send(bot, HELP, update.Message.Chat.ID, true)
 
 		case "version", "/version":
-			go version(client, update)
+			go version(bot, client, update)
 
 		case "":
 			// might be a file received
-			go receiveTorrent(client, botToken, update)
+			go receiveTorrent(bot, client, botToken, update)
 
 		default:
 			// no such command, try help
-			go send("no such command, try /help", update.Message.Chat.ID, false)
+			go send(bot, "no such command, try /help", update.Message.Chat.ID, false)
 
 		}
 	}
