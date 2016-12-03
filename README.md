@@ -15,3 +15,4 @@ Or if you have `Go` installed: `go get -u github.com/zhulik/transmission-telegra
 * DRY similar commands
 * Maybe, change command names
 * Track msg updates, eg: update `del <id1>` to `del <id2>`
+* Multiple masters or password auth
