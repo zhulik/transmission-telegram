@@ -86,7 +86,7 @@ func search(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud Up
 	// "(?i)" for case insensitivity
 	regx, err := regexp.Compile("(?i)" + query)
 	if err != nil {
-		send(bot, "*search*: "+err.Error(), ud.Message.Chat.ID)
+		send(bot, fmt.Sprintf("*search*: `%s`", err.Error()), ud.Message.Chat.ID)
 		return
 	}
 
@@ -99,7 +99,7 @@ func search(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud Up
 func count(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
 	torrents, err := client.GetTorrents()
 	if err != nil {
-		send(bot, "*count*: "+err.Error(), ud.Message.Chat.ID)
+		send(bot, fmt.Sprintf("*count*: `%s`", err.Error()), ud.Message.Chat.ID)
 		return
 	}
 
@@ -207,7 +207,7 @@ func updateTorrentInfo(bot *tgbotapi.BotAPI, client *transmission.TransmissionCl
 func stats(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
 	stats, err := client.GetStats()
 	if err != nil {
-		send(bot, "*stats*: "+err.Error(), ud.Message.Chat.ID)
+		send(bot, fmt.Sprintf("*stats*: `%s`", err.Error()), ud.Message.Chat.ID)
 		return
 	}
 
@@ -251,7 +251,7 @@ func speed(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud Upd
 	for i := 0; i < duration; i++ {
 		stats, err := client.GetStats()
 		if err != nil {
-			send(bot, "*speed*: "+err.Error(), ud.Message.Chat.ID)
+			send(bot, fmt.Sprintf("*speed*: `%s`", err.Error()), ud.Message.Chat.ID)
 			return
 		}
 

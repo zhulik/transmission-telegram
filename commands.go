@@ -20,7 +20,7 @@ func receiveTorrent(bot *tgbotapi.BotAPI, client *transmission.TransmissionClien
 	}
 	file, err := bot.GetFile(fconfig)
 	if err != nil {
-		send(bot, "*ERROR*: "+err.Error(), ud.Message.Chat.ID)
+		send(bot, fmt.Sprintf("*ERROR*: `%s`", err.Error()), ud.Message.Chat.ID)
 		return
 	}
 
@@ -54,7 +54,7 @@ func stop(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud Upda
 		}
 		status, err := client.StopTorrent(num)
 		if err != nil {
-			send(bot, "*stop*: "+err.Error(), ud.Message.Chat.ID)
+			send(bot, fmt.Sprintf("*stop*: `%s`", err.Error()), ud.Message.Chat.ID)
 			continue
 		}
 
@@ -94,7 +94,7 @@ func start(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud Upd
 		}
 		status, err := client.StartTorrent(num)
 		if err != nil {
-			send(bot, "*start*: "+err.Error(), ud.Message.Chat.ID)
+			send(bot, fmt.Sprintf("*start*: `%s`", err.Error()), ud.Message.Chat.ID)
 			continue
 		}
 
@@ -134,7 +134,7 @@ func check(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud Upd
 		}
 		status, err := client.VerifyTorrent(num)
 		if err != nil {
-			send(bot, "*stop*: "+err.Error(), ud.Message.Chat.ID)
+			send(bot, fmt.Sprintf("*stop*: `%s`", err.Error()), ud.Message.Chat.ID)
 			continue
 		}
 
@@ -166,7 +166,7 @@ func del(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud Updat
 
 		name, err := client.DeleteTorrent(num, false)
 		if err != nil {
-			send(bot, "*del*: "+err.Error(), ud.Message.Chat.ID)
+			send(bot, fmt.Sprintf("*del*: `%s`", err.Error()), ud.Message.Chat.ID)
 			return
 		}
 
@@ -191,7 +191,7 @@ func deldata(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud U
 
 		name, err := client.DeleteTorrent(num, true)
 		if err != nil {
-			send(bot, "*deldata*: "+err.Error(), ud.Message.Chat.ID)
+			send(bot, fmt.Sprintf("*deldata*: `%s`", err.Error()), ud.Message.Chat.ID)
 			return
 		}
 
@@ -217,13 +217,13 @@ func addTorrentsByURL(bot *tgbotapi.BotAPI, client *transmission.TransmissionCli
 
 		torrent, err := client.ExecuteAddCommand(cmd)
 		if err != nil {
-			send(bot, "*add*: "+err.Error(), ud.Message.Chat.ID)
+			send(bot, fmt.Sprintf("*add*: `%s`", err.Error()), ud.Message.Chat.ID)
 			continue
 		}
 
 		// check if torrent.Name is empty, then an error happened
 		if torrent.Name == "" {
-			send(bot, "*add*: error adding "+url, ud.Message.Chat.ID)
+			send(bot, fmt.Sprintf("*add*: error adding `%s`", url), ud.Message.Chat.ID)
 			continue
 		}
 		send(bot, fmt.Sprintf("*add*: *%d* `%s`", torrent.ID, torrent.Name), ud.Message.Chat.ID)
