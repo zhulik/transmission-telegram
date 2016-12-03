@@ -251,6 +251,7 @@ LenCheck:
 	return resp.MessageID
 }
 
+// addTorrentsByURL adds torrent files or magnet links passed by rls
 func addTorrentsByURL(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper, urls []string) {
 	if len(urls) == 0 {
 		send(bot, "add: needs atleast one URL", ud.Message.Chat.ID, false)
@@ -276,7 +277,7 @@ func addTorrentsByURL(bot *tgbotapi.BotAPI, client *transmission.TransmissionCli
 	}
 }
 
-// add takes an URL to a .torrent file to add it to transmission
+// add takes an URL to a .torrent file in message to add it to transmission
 func add(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
 	addTorrentsByURL(bot, client, ud, ud.Tokens())
 }
