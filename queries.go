@@ -129,7 +129,6 @@ func info(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud Upda
 			continue
 		}
 
-		// get the torrent
 		torrent, err := client.GetTorrent(torrentID)
 		if err != nil {
 			send(bot, fmt.Sprintf("*info*: Can't find a torrent with an ID of %d", torrentID), ud.Message.Chat.ID)
@@ -143,26 +142,13 @@ func info(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud Upda
 				trackers += string(sm[1]) + " "
 			}
 		}
-
-		// format the info
-		info := fmt.Sprintf("*%d* `%s`\n%s *%s* of *%s* (*%.1f%%*) ↓ *%s*  ↑ *%s* R: *%s*\nDL: *%s* UP: *%s*\nAdded: *%s*, ETA: *%s*\nTrackers: `%s`",
-			torrent.ID, torrent.Name, torrent.TorrentStatus(), humanize.Bytes(torrent.Have()), humanize.Bytes(torrent.SizeWhenDone),
-			torrent.PercentDone*100, humanize.Bytes(torrent.RateDownload), humanize.Bytes(torrent.RateUpload), torrent.Ratio(),
-			humanize.Bytes(torrent.DownloadedEver), humanize.Bytes(torrent.UploadedEver), time.Unix(torrent.AddedDate, 0).Format(time.Stamp),
-			torrent.ETA(), trackers)
-
-		// send it
-		msgID := send(bot, info, ud.Message.Chat.ID)
-
-		// this go-routine will make the info live for 'duration * interval'
-		// takes trackers so we don't have to regex them over and over.
-		go updateTorrentInfo(bot, client, ud, trackers, torrentID, msgID)
+		go updateTorrentInfo(bot, client, ud, trackers, torrentID)
 	}
 }
 
-func updateTorrentInfo(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper, trackers string, torrentID, msgID int) {
+func updateTorrentInfo(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper, trackers string, torrentID int) {
+	msgID := -1
 	for i := 0; i < duration; i++ {
-		time.Sleep(time.Second * interval)
 		torrent, err := client.GetTorrent(torrentID)
 		if err != nil {
 			continue // skip this iteration if there's an error retrieving the torrent's info
@@ -175,10 +161,14 @@ func updateTorrentInfo(bot *tgbotapi.BotAPI, client *transmission.TransmissionCl
 			torrent.ETA(), trackers)
 
 		// update the message
-		editConf := tgbotapi.NewEditMessageText(ud.Message.Chat.ID, msgID, info)
-		editConf.ParseMode = tgbotapi.ModeMarkdown
-		bot.Send(editConf)
-
+		if msgID == -1 {
+			msgID = send(bot, info, ud.Message.Chat.ID)
+		} else {
+			editConf := tgbotapi.NewEditMessageText(ud.Message.Chat.ID, msgID, info)
+			editConf.ParseMode = tgbotapi.ModeMarkdown
+			bot.Send(editConf)
+		}
+		time.Sleep(time.Second * interval)
 	}
 
 	torrent, err := client.GetTorrent(torrentID)
