@@ -49,7 +49,7 @@ func stop(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud Upda
 	for _, id := range ud.Tokens() {
 		num, err := strconv.Atoi(id)
 		if err != nil {
-			send(bot, fmt.Sprintf("*stop*: %s is not a number", id), ud.Message.Chat.ID)
+			send(bot, fmt.Sprintf("*stop*: `%s` is not a number", id), ud.Message.Chat.ID)
 			continue
 		}
 		status, err := client.StopTorrent(num)
@@ -89,7 +89,7 @@ func start(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud Upd
 	for _, id := range ud.Tokens() {
 		num, err := strconv.Atoi(id)
 		if err != nil {
-			send(bot, fmt.Sprintf("*start*: %s is not a number", id), ud.Message.Chat.ID)
+			send(bot, fmt.Sprintf("*start*: `%s` is not a number", id), ud.Message.Chat.ID)
 			continue
 		}
 		status, err := client.StartTorrent(num)
@@ -129,7 +129,7 @@ func check(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud Upd
 	for _, id := range ud.Tokens() {
 		num, err := strconv.Atoi(id)
 		if err != nil {
-			send(bot, fmt.Sprintf("*check*: %s is not a number", id), ud.Message.Chat.ID)
+			send(bot, fmt.Sprintf("*check*: `%s` is not a number", id), ud.Message.Chat.ID)
 			continue
 		}
 		status, err := client.VerifyTorrent(num)
@@ -160,7 +160,7 @@ func del(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud Updat
 	for _, id := range ud.Tokens() {
 		num, err := strconv.Atoi(id)
 		if err != nil {
-			send(bot, fmt.Sprintf("*del*: %s is not an ID", id), ud.Message.Chat.ID)
+			send(bot, fmt.Sprintf("*del*: `%s` is not an ID", id), ud.Message.Chat.ID)
 			return
 		}
 
@@ -185,7 +185,7 @@ func deldata(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud U
 	for _, id := range ud.Tokens() {
 		num, err := strconv.Atoi(id)
 		if err != nil {
-			send(bot, fmt.Sprintf("*deldata*: %s is not an ID", id), ud.Message.Chat.ID)
+			send(bot, fmt.Sprintf("*deldata*: `%s` is not an ID", id), ud.Message.Chat.ID)
 			return
 		}
 
@@ -195,7 +195,7 @@ func deldata(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud U
 			return
 		}
 
-		send(bot, fmt.Sprintf("*deldata*: Deleted with data: %s", name), ud.Message.Chat.ID)
+		send(bot, fmt.Sprintf("*deldata*: Deleted with data: `%s`", name), ud.Message.Chat.ID)
 	}
 }
 
