@@ -10,7 +10,7 @@ import (
 )
 
 // receiveTorrent gets an update that potentially has a .torrent file to add
-func receiveTorrent(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, token string, ud tgbotapi.Update) {
+func receiveTorrent(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, token string, ud UpdateWrapper) {
 	if ud.Message.Document.FileID == "" {
 		return // has no document
 	}
@@ -30,15 +30,15 @@ func receiveTorrent(bot *tgbotapi.BotAPI, client *transmission.TransmissionClien
 }
 
 // stop takes id[s] of torrent[s] or 'all' to stop them
-func stop(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud tgbotapi.Update, tokens []string) {
+func stop(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
 	// make sure that we got at least one argument
-	if len(tokens) == 0 {
+	if len(ud.Tokens()) == 0 {
 		send(bot, "stop: needs an argument", ud.Message.Chat.ID, false)
 		return
 	}
 
 	// if the first argument is 'all' then stop all torrents
-	if tokens[0] == "all" {
+	if ud.Tokens()[0] == "all" {
 		if err := client.StopAll(); err != nil {
 			send(bot, "stop: error occurred while stopping some torrents", ud.Message.Chat.ID, false)
 			return
@@ -47,7 +47,7 @@ func stop(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud tgbo
 		return
 	}
 
-	for _, id := range tokens {
+	for _, id := range ud.Tokens() {
 		num, err := strconv.Atoi(id)
 		if err != nil {
 			send(bot, fmt.Sprintf("stop: %s is not a number", id), ud.Message.Chat.ID, false)
@@ -69,15 +69,15 @@ func stop(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud tgbo
 }
 
 // start takes id[s] of torrent[s] or 'all' to start them
-func start(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud tgbotapi.Update, tokens []string) {
+func start(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
 	// make sure that we got at least one argument
-	if len(tokens) == 0 {
+	if len(ud.Tokens()) == 0 {
 		send(bot, "start: needs an argument", ud.Message.Chat.ID, false)
 		return
 	}
 
 	// if the first argument is 'all' then start all torrents
-	if tokens[0] == "all" {
+	if ud.Tokens()[0] == "all" {
 		if err := client.StartAll(); err != nil {
 			send(bot, "start: error occurred while starting some torrents", ud.Message.Chat.ID, false)
 			return
@@ -87,7 +87,7 @@ func start(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud tgb
 
 	}
 
-	for _, id := range tokens {
+	for _, id := range ud.Tokens() {
 		num, err := strconv.Atoi(id)
 		if err != nil {
 			send(bot, fmt.Sprintf("start: %s is not a number", id), ud.Message.Chat.ID, false)
@@ -109,15 +109,15 @@ func start(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud tgb
 }
 
 // check takes id[s] of torrent[s] or 'all' to verify them
-func check(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud tgbotapi.Update, tokens []string) {
+func check(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
 	// make sure that we got at least one argument
-	if len(tokens) == 0 {
+	if len(ud.Tokens()) == 0 {
 		send(bot, "check: needs an argument", ud.Message.Chat.ID, false)
 		return
 	}
 
 	// if the first argument is 'all' then start all torrents
-	if tokens[0] == "all" {
+	if ud.Tokens()[0] == "all" {
 		if err := client.VerifyAll(); err != nil {
 			send(bot, "check: error occurred while verifying some torrents", ud.Message.Chat.ID, false)
 			return
@@ -127,7 +127,7 @@ func check(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud tgb
 
 	}
 
-	for _, id := range tokens {
+	for _, id := range ud.Tokens() {
 		num, err := strconv.Atoi(id)
 		if err != nil {
 			send(bot, fmt.Sprintf("check: %s is not a number", id), ud.Message.Chat.ID, false)
@@ -150,15 +150,15 @@ func check(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud tgb
 }
 
 // del takes an id or more, and delete the corresponding torrent/s
-func del(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud tgbotapi.Update, tokens []string) {
+func del(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
 	// make sure that we got an argument
-	if len(tokens) == 0 {
+	if len(ud.Tokens()) == 0 {
 		send(bot, "del: needs an ID", ud.Message.Chat.ID, false)
 		return
 	}
 
-	// loop over tokens to read each potential id
-	for _, id := range tokens {
+	// loop over ud.Tokens() to read each potential id
+	for _, id := range ud.Tokens() {
 		num, err := strconv.Atoi(id)
 		if err != nil {
 			send(bot, fmt.Sprintf("del: %s is not an ID", id), ud.Message.Chat.ID, false)
@@ -176,14 +176,14 @@ func del(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud tgbot
 }
 
 // deldata takes an id or more, and delete the corresponding torrent/s with their data
-func deldata(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud tgbotapi.Update, tokens []string) {
+func deldata(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
 	// make sure that we got an argument
-	if len(tokens) == 0 {
+	if len(ud.Tokens()) == 0 {
 		send(bot, "deldata: needs an ID", ud.Message.Chat.ID, false)
 		return
 	}
-	// loop over tokens to read each potential id
-	for _, id := range tokens {
+	// loop over ud.Tokens() to read each potential id
+	for _, id := range ud.Tokens() {
 		num, err := strconv.Atoi(id)
 		if err != nil {
 			send(bot, fmt.Sprintf("deldata: %s is not an ID", id), ud.Message.Chat.ID, false)
@@ -201,7 +201,7 @@ func deldata(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud t
 }
 
 // version sends transmission version + transmission-telegram version
-func version(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud tgbotapi.Update) {
+func version(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
 	send(bot, fmt.Sprintf("Transmission *%s*\nTransmission-telegram *%s*", client.Version(), VERSION), ud.Message.Chat.ID, true)
 }
 
@@ -252,14 +252,14 @@ LenCheck:
 }
 
 // add takes an URL to a .torrent file to add it to transmission
-func add(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud tgbotapi.Update, tokens []string) {
-	if len(tokens) == 0 {
+func add(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper, urls []string) {
+	if len(urls) == 0 {
 		send(bot, "add: needs atleast one URL", ud.Message.Chat.ID, false)
 		return
 	}
 
 	// loop over the URL/s and add them
-	for _, url := range tokens {
+	for _, url := range urls {
 		cmd := transmission.NewAddCmdByURL(url)
 
 		torrent, err := client.ExecuteAddCommand(cmd)

@@ -171,90 +171,87 @@ func main() {
 			continue
 		}
 
+		// tokenize the update
+		wrapper := UpdateWrapper(update)
+
 		// ignore anyone other than 'master'
 		if strings.ToLower(update.Message.From.UserName) != strings.ToLower(masterUsername) {
-			log.Printf("[INFO] Ignored a message from: %s", update.Message.From.String())
+			log.Printf("[INFO] Ignored a message from: %s", wrapper.Message.From.String())
 			continue
 		}
 
-		// tokenize the update
-		tokens := strings.Split(update.Message.Text, " ")
-		command := strings.ToLower(tokens[0])
-
-		switch command {
+		switch wrapper.Command() {
 		case "list", "/list", "li", "/li":
-			go list(bot, client, update, tokens[1:])
+			go list(bot, client, wrapper)
 
 		case "downs", "/downs", "dl", "/dl":
-			go downs(bot, client, update)
+			go downs(bot, client, wrapper)
 
 		case "seeding", "/seeding", "sd", "/sd":
-			go seeding(bot, client, update)
+			go seeding(bot, client, wrapper)
 
 		case "paused", "/paused", "pa", "/pa":
-			go paused(bot, client, update)
+			go paused(bot, client, wrapper)
 
 		case "checking", "/checking", "ch", "/ch":
-			go checking(bot, client, update)
+			go checking(bot, client, wrapper)
 
 		case "active", "/active", "ac", "/ac":
-			go active(bot, client, update)
+			go active(bot, client, wrapper)
 
 		case "errors", "/errors", "er", "/er":
-			go errors(bot, client, update)
+			go errors(bot, client, wrapper)
 
 		case "sort", "/sort", "so", "/so":
-			go sort(bot, client, update, tokens[1:])
+			go sort(bot, client, wrapper)
 
 		case "trackers", "/trackers", "tr", "/tr":
-			go trackers(bot, client, update)
+			go trackers(bot, client, wrapper)
 
 		case "add", "/add", "ad", "/ad":
-			go add(bot, client, update, tokens[1:])
+			go add(bot, client, wrapper, wrapper.Tokens())
 
 		case "search", "/search", "se", "/se":
-			go search(bot, client, update, tokens[1:])
+			go search(bot, client, wrapper)
 
 		case "info", "/info", "in", "/in":
-			go info(bot, client, update, tokens[1:])
+			go info(bot, client, wrapper)
 
 		case "stop", "/stop", "sp", "/sp":
-			go stop(bot, client, update, tokens[1:])
+			go stop(bot, client, wrapper)
 
 		case "start", "/start", "st", "/st":
-			go start(bot, client, update, tokens[1:])
+			go start(bot, client, wrapper)
 
 		case "check", "/check", "ck", "/ck":
-			go check(bot, client, update, tokens[1:])
+			go check(bot, client, wrapper)
 
 		case "stats", "/stats", "sa", "/sa":
-			go stats(bot, client, update)
+			go stats(bot, client, wrapper)
 
 		case "speed", "/speed", "ss", "/ss":
-			go speed(bot, client, update)
+			go speed(bot, client, wrapper)
 
 		case "count", "/count", "co", "/co":
-			go count(bot, client, update)
+			go count(bot, client, wrapper)
 
 		case "del", "/del":
-			go del(bot, client, update, tokens[1:])
+			go del(bot, client, wrapper)
 
 		case "deldata", "/deldata":
-			go deldata(bot, client, update, tokens[1:])
+			go deldata(bot, client, wrapper)
 
 		case "help", "/help":
-			go send(bot, HELP, update.Message.Chat.ID, true)
+			go send(bot, HELP, wrapper.Message.Chat.ID, true)
 
 		case "version", "/version":
-			go version(bot, client, update)
+			go version(bot, client, wrapper)
 
 		case "":
-			// might be a file received
-			go receiveTorrent(bot, client, botToken, update)
+			go receiveTorrent(bot, client, botToken, wrapper)
 
 		default:
-			// no such command, try help
-			go send(bot, "no such command, try /help", update.Message.Chat.ID, false)
+			go send(bot, "no such command, try /help", wrapper.Message.Chat.ID, false)
 		}
 	}
 }

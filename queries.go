@@ -23,7 +23,7 @@ var (
 // list will form and send a list of all the torrents
 // takes an optional argument which is a query to match against trackers
 // to list only torrents that has a tracker that matchs.
-func list(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud tgbotapi.Update, tokens []string) {
+func list(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
 	torrents, err := client.GetTorrents()
 	if err != nil {
 		send(bot, "list: "+err.Error(), ud.Message.Chat.ID, false)
@@ -32,9 +32,9 @@ func list(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud tgbo
 
 	buf := new(bytes.Buffer)
 	// if it gets a query, it will list torrents that has trackers that match the query
-	if len(tokens) != 0 {
+	if len(ud.Tokens()) != 0 {
 		// (?i) for case insensitivity
-		regx, err := regexp.Compile("(?i)" + tokens[0])
+		regx, err := regexp.Compile("(?i)" + ud.Tokens()[0])
 		if err != nil {
 			send(bot, "list: "+err.Error(), ud.Message.Chat.ID, false)
 			return
@@ -53,8 +53,8 @@ func list(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud tgbo
 
 	if buf.Len() == 0 {
 		// if we got a tracker query show different message
-		if len(tokens) != 0 {
-			send(bot, fmt.Sprintf("list: No tracker matches: *%s*", tokens[0]), ud.Message.Chat.ID, true)
+		if len(ud.Tokens()) != 0 {
+			send(bot, fmt.Sprintf("list: No tracker matches: *%s*", ud.Tokens()[0]), ud.Message.Chat.ID, true)
 			return
 		}
 		send(bot, "list: No torrents", ud.Message.Chat.ID, false)
@@ -65,7 +65,7 @@ func list(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud tgbo
 }
 
 // downs will send the names of torrents with status 'Downloading' or in queue to
-func downs(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud tgbotapi.Update) {
+func downs(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
 	torrents, err := client.GetTorrents()
 	if err != nil {
 		send(bot, "downs: "+err.Error(), ud.Message.Chat.ID, false)
@@ -89,7 +89,7 @@ func downs(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud tgb
 }
 
 // seeding will send the names of the torrents with the status 'Seeding' or in the queue to
-func seeding(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud tgbotapi.Update) {
+func seeding(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
 	torrents, err := client.GetTorrents()
 	if err != nil {
 		send(bot, "seeding: "+err.Error(), ud.Message.Chat.ID, false)
@@ -114,7 +114,7 @@ func seeding(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud t
 }
 
 // paused will send the names of the torrents with status 'Paused'
-func paused(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud tgbotapi.Update) {
+func paused(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
 	torrents, err := client.GetTorrents()
 	if err != nil {
 		send(bot, "paused: "+err.Error(), ud.Message.Chat.ID, false)
@@ -140,7 +140,7 @@ func paused(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud tg
 }
 
 // checking will send the names of torrents with the status 'verifying' or in the queue to
-func checking(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud tgbotapi.Update) {
+func checking(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
 	torrents, err := client.GetTorrents()
 	if err != nil {
 		send(bot, "checking: "+err.Error(), ud.Message.Chat.ID, false)
@@ -167,7 +167,7 @@ func checking(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud 
 }
 
 // active will send torrents that are actively downloading or uploading
-func active(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud tgbotapi.Update) {
+func active(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
 	torrents, err := client.GetTorrents()
 	if err != nil {
 		send(bot, "active: "+err.Error(), ud.Message.Chat.ID, false)
@@ -243,7 +243,7 @@ func active(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud tg
 }
 
 // errors will send torrents with errors
-func errors(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud tgbotapi.Update) {
+func errors(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
 	torrents, err := client.GetTorrents()
 	if err != nil {
 		send(bot, "errors: "+err.Error(), ud.Message.Chat.ID, false)
@@ -265,8 +265,8 @@ func errors(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud tg
 }
 
 // sort changes torrents sorting
-func sort(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud tgbotapi.Update, tokens []string) {
-	if len(tokens) == 0 {
+func sort(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
+	if len(ud.Tokens()) == 0 {
 		send(bot, `sort takes one of:
 			(*id, name, age, size, progress, downspeed, upspeed, download, upload, ratio*)
 			optionally start with (*rev*) for reversed order
@@ -275,9 +275,10 @@ func sort(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud tgbo
 	}
 
 	var reversed bool
-	if strings.ToLower(tokens[0]) == "rev" {
+	tokens := ud.Tokens()
+	if strings.ToLower(ud.Tokens()[0]) == "rev" {
 		reversed = true
-		tokens = tokens[1:]
+		tokens = ud.Tokens()[1:]
 	}
 
 	switch strings.ToLower(tokens[0]) {
@@ -356,7 +357,7 @@ func sort(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud tgbo
 var trackerRegex = regexp.MustCompile(`[https?|udp]://([^:/]*)`)
 
 // trackers will send a list of trackers and how many torrents each one has
-func trackers(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud tgbotapi.Update) {
+func trackers(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
 	torrents, err := client.GetTorrents()
 	if err != nil {
 		send(bot, "trackers: "+err.Error(), ud.Message.Chat.ID, false)
@@ -393,7 +394,7 @@ func trackers(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud 
 }
 
 // count returns current torrents count per status
-func count(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud tgbotapi.Update) {
+func count(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
 	torrents, err := client.GetTorrents()
 	if err != nil {
 		send(bot, "count: "+err.Error(), ud.Message.Chat.ID, false)
@@ -429,14 +430,14 @@ func count(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud tgb
 }
 
 // search takes a query and returns torrents with match
-func search(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud tgbotapi.Update, tokens []string) {
+func search(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
 	// make sure that we got a query
-	if len(tokens) == 0 {
+	if len(ud.Tokens()) == 0 {
 		send(bot, "search: needs an argument", ud.Message.Chat.ID, false)
 		return
 	}
 
-	query := strings.Join(tokens, " ")
+	query := strings.Join(ud.Tokens(), " ")
 	// "(?i)" for case insensitivity
 	regx, err := regexp.Compile("(?i)" + query)
 	if err != nil {
@@ -464,13 +465,13 @@ func search(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud tg
 }
 
 // info takes an id of a torrent and returns some info about it
-func info(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud tgbotapi.Update, tokens []string) {
-	if len(tokens) == 0 {
+func info(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
+	if len(ud.Tokens()) == 0 {
 		send(bot, "info: needs a torrent ID number", ud.Message.Chat.ID, false)
 		return
 	}
 
-	for _, id := range tokens {
+	for _, id := range ud.Tokens() {
 		torrentID, err := strconv.Atoi(id)
 		if err != nil {
 			send(bot, fmt.Sprintf("info: %s is not a number", id), ud.Message.Chat.ID, false)
@@ -543,7 +544,7 @@ func info(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud tgbo
 }
 
 // stats echo back transmission stats
-func stats(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud tgbotapi.Update) {
+func stats(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
 	stats, err := client.GetStats()
 	if err != nil {
 		send(bot, "stats: "+err.Error(), ud.Message.Chat.ID, false)
@@ -584,7 +585,7 @@ func stats(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud tgb
 }
 
 // speed will echo back the current download and upload speeds
-func speed(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud tgbotapi.Update) {
+func speed(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
 	// keep track of the returned message ID from 'send()' to edit the message.
 	var msgID int
 	for i := 0; i < duration; i++ {
