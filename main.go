@@ -16,23 +16,13 @@ const (
 	VERSION = "2.0"
 
 	HELP = `
-	*list* or *li*
-	Lists all the torrents, takes an optional argument which is a query to list only torrents that has a tracker matches the query, or some of it.
-
-	*downs* or *dl*
-	Lists torrents with the status of Downloading or in the queue to download.
-
-	*seeding* or *sd*
-	Lists torrents with the status of Seeding or in the queue to seed.
-
-	*paused* or *pa*
-	Lists Paused torrents.
-
-	*checking* or *ch*
-	Lists torrents with the status of Verifying or in the queue to verify.
-
-	*errors* or *er*
-	Lists torrents with with errors along with the error message.
+	*ls* [dl, sd, pa, ch, er]
+	Lists the torrents. Optional argument:
+		*dl* - Lists torrents with the status of Downloading or in the queue to download.
+		*sd* - Lists torrents with the status of Seeding or in the queue to seed.
+		*pa* - Lists Paused torrents.
+		*ch* - Lists torrents with the status of Verifying or in the queue to verify.
+		*er* - Lists torrents with with errors along with the error message.
 
 	*search* or *se*
 	Takes a query and lists torrents with matching names.
@@ -190,23 +180,8 @@ func main() {
 
 func findHandler(command string) CommandHandler {
 	switch command {
-	case "list", "/list", "li", "/li":
+	case "ls", "/ls":
 		return list
-
-	case "downs", "/downs", "dl", "/dl":
-		return downs
-
-	case "seeding", "/seeding", "sd", "/sd":
-		return seeding
-
-	case "paused", "/paused", "pa", "/pa":
-		return paused
-
-	case "checking", "/checking", "ch", "/ch":
-		return checking
-
-	case "errors", "/errors", "er", "/er":
-		return errors
 
 	case "sort", "/sort", "so", "/so":
 		return sort

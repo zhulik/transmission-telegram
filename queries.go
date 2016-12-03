@@ -17,7 +17,23 @@ var (
 
 // list will form and send a list of all the torrents
 func list(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
-	sendFilteredTorrets(bot, client, ud, func(t *transmission.Torrent) bool { return true })
+	if len(ud.Tokens()) > 0 {
+		mode := ud.Tokens()[0]
+		switch mode {
+		case "dl":
+			downs(bot, client, ud)
+		case "sd":
+			seeding(bot, client, ud)
+		case "pa":
+			paused(bot, client, ud)
+		case "ch":
+			checking(bot, client, ud)
+		case "er":
+			errors(bot, client, ud)
+		}
+	} else {
+		sendFilteredTorrets(bot, client, ud, func(t *transmission.Torrent) bool { return true })
+	}
 }
 
 // downs will send the names of torrents with status 'Downloading' or in queue to
