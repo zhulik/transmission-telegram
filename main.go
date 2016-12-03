@@ -89,16 +89,6 @@ const (
 	interval time.Duration = 2
 )
 
-var (
-	Updates <-chan tgbotapi.Update
-
-	mdReplacer = strings.NewReplacer("*", "•",
-		"[", "(",
-		"]", ")",
-		"_", "-",
-		"`", "'")
-)
-
 func main() {
 	var botToken string
 	var Master string
@@ -169,13 +159,13 @@ func main() {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 
-	Updates, err = bot.GetUpdatesChan(u)
+	updates, err := bot.GetUpdatesChan(u)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "[ERROR] Telegram: %s", err)
 		os.Exit(1)
 	}
 
-	for update := range Updates {
+	for update := range updates {
 		// ignore edited messages
 		if update.Message == nil {
 			continue
@@ -265,7 +255,6 @@ func main() {
 		default:
 			// no such command, try help
 			go send(bot, "no such command, try /help", update.Message.Chat.ID, false)
-
 		}
 	}
 }

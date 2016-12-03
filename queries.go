@@ -12,6 +12,14 @@ import (
 	"time"
 )
 
+var (
+	mdReplacer = strings.NewReplacer("*", "•",
+		"[", "(",
+		"]", ")",
+		"_", "-",
+		"`", "'")
+)
+
 // list will form and send a list of all the torrents
 // takes an optional argument which is a query to match against trackers
 // to list only torrents that has a tracker that matchs.
