@@ -90,15 +90,6 @@ const (
 )
 
 var (
-	BotToken string
-	Master   string
-	RPCURL   string
-	Username string
-	Password string
-	LogFile  string
-
-	Client *transmission.TransmissionClient
-
 	Bot     *tgbotapi.BotAPI
 	Updates <-chan tgbotapi.Update
 
@@ -110,8 +101,14 @@ var (
 )
 
 func main() {
+	var botToken string
+	var Master string
+	var RPCURL string
+	var Username string
+	var Password string
+	var LogFile string
 	// define arguments and parse them.
-	flag.StringVar(&BotToken, "token", "", "Telegram bot token")
+	flag.StringVar(&botToken, "token", "", "Telegram bot token")
 	flag.StringVar(&Master, "master", "", "Your telegram handler, So the bot will only respond to you")
 	flag.StringVar(&RPCURL, "url", "http://localhost:9091/transmission/rpc", "Transmission RPC URL")
 	flag.StringVar(&Username, "username", "", "Transmission username")
@@ -127,7 +124,7 @@ func main() {
 	flag.Parse()
 
 	// make sure that we have the two madatory arguments: telegram token & master's handler.
-	if BotToken == "" ||
+	if botToken == "" ||
 		Master == "" {
 		fmt.Fprintf(os.Stderr, "Error: Mandatory argument missing! (-token or -master)\n\n")
 		flag.Usage()
@@ -155,16 +152,15 @@ func main() {
 
 	// log the flags
 	log.Printf("[INFO] Token=%s\nMaster=%s\nURL=%s\nUSER=%s\nPASS=%s",
-		BotToken, Master, RPCURL, Username, Password)
+		botToken, Master, RPCURL, Username, Password)
 
-	var err error
-	Client, err = transmission.New(RPCURL, Username, Password)
+	client, err := transmission.New(RPCURL, Username, Password)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "[ERROR] Transmission: Make sure you have the right URL, Username and Password")
 		os.Exit(1)
 	}
 
-	Bot, err = tgbotapi.NewBotAPI(BotToken)
+	Bot, err = tgbotapi.NewBotAPI(botToken)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "[ERROR] Telegram: %s", err)
 		os.Exit(1)
@@ -198,74 +194,74 @@ func main() {
 
 		switch command {
 		case "list", "/list", "li", "/li":
-			go list(update, tokens[1:])
+			go list(client, update, tokens[1:])
 
 		case "downs", "/downs", "dl", "/dl":
-			go downs(update)
+			go downs(client, update)
 
 		case "seeding", "/seeding", "sd", "/sd":
-			go seeding(update)
+			go seeding(client, update)
 
 		case "paused", "/paused", "pa", "/pa":
-			go paused(update)
+			go paused(client, update)
 
 		case "checking", "/checking", "ch", "/ch":
-			go checking(update)
+			go checking(client, update)
 
 		case "active", "/active", "ac", "/ac":
-			go active(update)
+			go active(client, update)
 
 		case "errors", "/errors", "er", "/er":
-			go errors(update)
+			go errors(client, update)
 
 		case "sort", "/sort", "so", "/so":
-			go sort(update, tokens[1:])
+			go sort(client, update, tokens[1:])
 
 		case "trackers", "/trackers", "tr", "/tr":
-			go trackers(update)
+			go trackers(client, update)
 
 		case "add", "/add", "ad", "/ad":
-			go add(update, tokens[1:])
+			go add(client, update, tokens[1:])
 
 		case "search", "/search", "se", "/se":
-			go search(update, tokens[1:])
+			go search(client, update, tokens[1:])
 
 		case "info", "/info", "in", "/in":
-			go info(update, tokens[1:])
+			go info(client, update, tokens[1:])
 
 		case "stop", "/stop", "sp", "/sp":
-			go stop(update, tokens[1:])
+			go stop(client, update, tokens[1:])
 
 		case "start", "/start", "st", "/st":
-			go start(update, tokens[1:])
+			go start(client, update, tokens[1:])
 
 		case "check", "/check", "ck", "/ck":
-			go check(update, tokens[1:])
+			go check(client, update, tokens[1:])
 
 		case "stats", "/stats", "sa", "/sa":
-			go stats(update)
+			go stats(client, update)
 
 		case "speed", "/speed", "ss", "/ss":
-			go speed(update)
+			go speed(client, update)
 
 		case "count", "/count", "co", "/co":
-			go count(update)
+			go count(client, update)
 
 		case "del", "/del":
-			go del(update, tokens[1:])
+			go del(client, update, tokens[1:])
 
 		case "deldata", "/deldata":
-			go deldata(update, tokens[1:])
+			go deldata(client, update, tokens[1:])
 
 		case "help", "/help":
 			go send(HELP, update.Message.Chat.ID, true)
 
 		case "version", "/version":
-			go version(update)
+			go version(client, update)
 
 		case "":
 			// might be a file received
-			go receiveTorrent(update)
+			go receiveTorrent(client, botToken, update)
 
 		default:
 			// no such command, try help
