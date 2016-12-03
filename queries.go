@@ -12,157 +12,68 @@ import (
 	"time"
 )
 
-var (
-	mdReplacer = strings.NewReplacer("*", "•",
-		"[", "(",
-		"]", ")",
-		"_", "-",
-		"`", "'")
-)
-
 // list will form and send a list of all the torrents
 func list(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
-	torrents, err := client.GetTorrents()
-	if err != nil {
-		send(bot, "list: "+err.Error(), ud.Message.Chat.ID, false)
-		return
-	}
-
-	buf := new(bytes.Buffer)
-	for _, torrent := range torrents {
-		buf.WriteString(fmt.Sprintf("*%d* `%s` _%s_\n", torrent.ID, ellipsisString(torrent.Name, 25), torrent.TorrentStatus()))
-	}
-
-	if buf.Len() == 0 {
-		send(bot, "list: No torrents", ud.Message.Chat.ID, false)
-		return
-	}
-
-	send(bot, buf.String(), ud.Message.Chat.ID, true)
+	sendFilteredTorrets(bot, client, ud, func(t *transmission.Torrent) bool { return true })
 }
 
 // downs will send the names of torrents with status 'Downloading' or in queue to
 func downs(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
-	torrents, err := client.GetTorrents()
-	if err != nil {
-		send(bot, "downs: "+err.Error(), ud.Message.Chat.ID, false)
-		return
-	}
-
-	buf := new(bytes.Buffer)
-	for i := range torrents {
-		// Downloading or in queue to download
-		if torrents[i].Status == transmission.StatusDownloading ||
-			torrents[i].Status == transmission.StatusDownloadPending {
-			buf.WriteString(fmt.Sprintf("<%d> %s\n", torrents[i].ID, torrents[i].Name))
-		}
-	}
-
-	if buf.Len() == 0 {
-		send(bot, "No downloads", ud.Message.Chat.ID, false)
-		return
-	}
-	send(bot, buf.String(), ud.Message.Chat.ID, false)
+	sendFilteredTorrets(bot, client, ud, func(t *transmission.Torrent) bool {
+		return t.Status == transmission.StatusDownloading ||
+			t.Status == transmission.StatusDownloadPending
+	})
 }
 
 // seeding will send the names of the torrents with the status 'Seeding' or in the queue to
 func seeding(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
-	torrents, err := client.GetTorrents()
-	if err != nil {
-		send(bot, "seeding: "+err.Error(), ud.Message.Chat.ID, false)
-		return
-	}
-
-	buf := new(bytes.Buffer)
-	for i := range torrents {
-		if torrents[i].Status == transmission.StatusSeeding ||
-			torrents[i].Status == transmission.StatusSeedPending {
-			buf.WriteString(fmt.Sprintf("<%d> %s\n", torrents[i].ID, torrents[i].Name))
-		}
-	}
-
-	if buf.Len() == 0 {
-		send(bot, "No torrents seeding", ud.Message.Chat.ID, false)
-		return
-	}
-
-	send(bot, buf.String(), ud.Message.Chat.ID, false)
-
+	sendFilteredTorrets(bot, client, ud, func(t *transmission.Torrent) bool {
+		return t.Status == transmission.StatusSeeding ||
+			t.Status == transmission.StatusSeedPending
+	})
 }
 
 // paused will send the names of the torrents with status 'Paused'
 func paused(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
-	torrents, err := client.GetTorrents()
-	if err != nil {
-		send(bot, "paused: "+err.Error(), ud.Message.Chat.ID, false)
-		return
-	}
-
-	buf := new(bytes.Buffer)
-	for i := range torrents {
-		if torrents[i].Status == transmission.StatusStopped {
-			buf.WriteString(fmt.Sprintf("<%d> %s\n%s (%.1f%%) DL: %s UL: %s  R: %s\n\n",
-				torrents[i].ID, torrents[i].Name, torrents[i].TorrentStatus(),
-				torrents[i].PercentDone*100, humanize.Bytes(torrents[i].DownloadedEver),
-				humanize.Bytes(torrents[i].UploadedEver), torrents[i].Ratio()))
-		}
-	}
-
-	if buf.Len() == 0 {
-		send(bot, "No paused torrents", ud.Message.Chat.ID, false)
-		return
-	}
-
-	send(bot, buf.String(), ud.Message.Chat.ID, false)
+	sendFilteredTorrets(bot, client, ud, func(t *transmission.Torrent) bool {
+		return t.Status == transmission.StatusStopped
+	})
 }
 
 // checking will send the names of torrents with the status 'verifying' or in the queue to
 func checking(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
-	torrents, err := client.GetTorrents()
-	if err != nil {
-		send(bot, "checking: "+err.Error(), ud.Message.Chat.ID, false)
-		return
-	}
-
-	buf := new(bytes.Buffer)
-	for i := range torrents {
-		if torrents[i].Status == transmission.StatusChecking ||
-			torrents[i].Status == transmission.StatusCheckPending {
-			buf.WriteString(fmt.Sprintf("<%d> %s\n%s (%.1f%%)\n\n",
-				torrents[i].ID, torrents[i].Name, torrents[i].TorrentStatus(),
-				torrents[i].PercentDone*100))
-
-		}
-	}
-
-	if buf.Len() == 0 {
-		send(bot, "No torrents verifying", ud.Message.Chat.ID, false)
-		return
-	}
-
-	send(bot, buf.String(), ud.Message.Chat.ID, false)
+	sendFilteredTorrets(bot, client, ud, func(t *transmission.Torrent) bool {
+		return t.Status == transmission.StatusChecking ||
+			t.Status == transmission.StatusCheckPending
+	})
 }
 
 // errors will send torrents with errors
 func errors(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
-	torrents, err := client.GetTorrents()
-	if err != nil {
-		send(bot, "errors: "+err.Error(), ud.Message.Chat.ID, false)
+	sendFilteredTorrets(bot, client, ud, func(t *transmission.Torrent) bool {
+		return t.Error != 0
+	})
+}
+
+// search takes a query and returns torrents with match
+func search(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
+	// make sure that we got a query
+	if len(ud.Tokens()) == 0 {
+		send(bot, "search: needs an argument", ud.Message.Chat.ID, false)
 		return
 	}
 
-	buf := new(bytes.Buffer)
-	for i := range torrents {
-		if torrents[i].Error != 0 {
-			buf.WriteString(fmt.Sprintf("<%d> %s\n%s\n",
-				torrents[i].ID, torrents[i].Name, torrents[i].ErrorString))
-		}
-	}
-	if buf.Len() == 0 {
-		send(bot, "No errors", ud.Message.Chat.ID, false)
+	query := strings.Join(ud.Tokens(), " ")
+	// "(?i)" for case insensitivity
+	regx, err := regexp.Compile("(?i)" + query)
+	if err != nil {
+		send(bot, "search: "+err.Error(), ud.Message.Chat.ID, false)
 		return
 	}
-	send(bot, buf.String(), ud.Message.Chat.ID, false)
+
+	sendFilteredTorrets(bot, client, ud, func(t *transmission.Torrent) bool {
+		return regx.MatchString(t.Name)
+	})
 }
 
 // sort changes torrents sorting
@@ -330,41 +241,6 @@ func count(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud Upd
 
 }
 
-// search takes a query and returns torrents with match
-func search(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
-	// make sure that we got a query
-	if len(ud.Tokens()) == 0 {
-		send(bot, "search: needs an argument", ud.Message.Chat.ID, false)
-		return
-	}
-
-	query := strings.Join(ud.Tokens(), " ")
-	// "(?i)" for case insensitivity
-	regx, err := regexp.Compile("(?i)" + query)
-	if err != nil {
-		send(bot, "search: "+err.Error(), ud.Message.Chat.ID, false)
-		return
-	}
-
-	torrents, err := client.GetTorrents()
-	if err != nil {
-		send(bot, "search: "+err.Error(), ud.Message.Chat.ID, false)
-		return
-	}
-
-	buf := new(bytes.Buffer)
-	for i := range torrents {
-		if regx.MatchString(torrents[i].Name) {
-			buf.WriteString(fmt.Sprintf("<%d> %s\n", torrents[i].ID, torrents[i].Name))
-		}
-	}
-	if buf.Len() == 0 {
-		send(bot, "No matches!", ud.Message.Chat.ID, false)
-		return
-	}
-	send(bot, buf.String(), ud.Message.Chat.ID, false)
-}
-
 // info takes an id of a torrent and returns some info about it
 func info(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
 	if len(ud.Tokens()) == 0 {
@@ -396,9 +272,8 @@ func info(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud Upda
 		}
 
 		// format the info
-		torrentName := mdReplacer.Replace(torrent.Name) // escape markdown
-		info := fmt.Sprintf("`<%d>` *%s*\n%s *%s* of *%s* (*%.1f%%*) ↓ *%s*  ↑ *%s* R: *%s*\nDL: *%s* UP: *%s*\nAdded: *%s*, ETA: *%s*\nTrackers: `%s`",
-			torrent.ID, torrentName, torrent.TorrentStatus(), humanize.Bytes(torrent.Have()), humanize.Bytes(torrent.SizeWhenDone),
+		info := fmt.Sprintf("*%d* `%s`\n%s *%s* of *%s* (*%.1f%%*) ↓ *%s*  ↑ *%s* R: *%s*\nDL: *%s* UP: *%s*\nAdded: *%s*, ETA: *%s*\nTrackers: `%s`",
+			torrent.ID, torrent.Name, torrent.TorrentStatus(), humanize.Bytes(torrent.Have()), humanize.Bytes(torrent.SizeWhenDone),
 			torrent.PercentDone*100, humanize.Bytes(torrent.RateDownload), humanize.Bytes(torrent.RateUpload), torrent.Ratio(),
 			humanize.Bytes(torrent.DownloadedEver), humanize.Bytes(torrent.UploadedEver), time.Unix(torrent.AddedDate, 0).Format(time.Stamp),
 			torrent.ETA(), trackers)
@@ -416,9 +291,8 @@ func info(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud Upda
 					continue // skip this iteration if there's an error retrieving the torrent's info
 				}
 
-				torrentName := mdReplacer.Replace(torrent.Name)
-				info := fmt.Sprintf("`<%d>` *%s*\n%s *%s* of *%s* (*%.1f%%*) ↓ *%s*  ↑ *%s* R: *%s*\nDL: *%s* UP: *%s*\nAdded: *%s*, ETA: *%s*\nTrackers: `%s`",
-					torrent.ID, torrentName, torrent.TorrentStatus(), humanize.Bytes(torrent.Have()), humanize.Bytes(torrent.SizeWhenDone),
+				info := fmt.Sprintf("*%d* `%s`\n%s *%s* of *%s* (*%.1f%%*) ↓ *%s*  ↑ *%s* R: *%s*\nDL: *%s* UP: *%s*\nAdded: *%s*, ETA: *%s*\nTrackers: `%s`",
+					torrent.ID, torrent.Name, torrent.TorrentStatus(), humanize.Bytes(torrent.Have()), humanize.Bytes(torrent.SizeWhenDone),
 					torrent.PercentDone*100, humanize.Bytes(torrent.RateDownload), humanize.Bytes(torrent.RateUpload), torrent.Ratio(),
 					humanize.Bytes(torrent.DownloadedEver), humanize.Bytes(torrent.UploadedEver), time.Unix(torrent.AddedDate, 0).Format(time.Stamp),
 					torrent.ETA(), trackers)
@@ -431,9 +305,8 @@ func info(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud Upda
 			}
 
 			// at the end write dashes to indicate that we are done being live.
-			torrentName := mdReplacer.Replace(torrent.Name)
-			info := fmt.Sprintf("`<%d>` *%s*\n%s *%s* of *%s* (*%.1f%%*) ↓ *- B*  ↑ *- B* R: *%s*\nDL: *%s* UP: *%s*\nAdded: *%s*, ETA: *-*\nTrackers: `%s`",
-				torrent.ID, torrentName, torrent.TorrentStatus(), humanize.Bytes(torrent.Have()), humanize.Bytes(torrent.SizeWhenDone),
+			info := fmt.Sprintf("*%d* `%s`\n%s *%s* of *%s* (*%.1f%%*) ↓ *- B*  ↑ *- B* R: *%s*\nDL: *%s* UP: *%s*\nAdded: *%s*, ETA: *-*\nTrackers: `%s`",
+				torrent.ID, torrent.Name, torrent.TorrentStatus(), humanize.Bytes(torrent.Have()), humanize.Bytes(torrent.SizeWhenDone),
 				torrent.PercentDone*100, torrent.Ratio(), humanize.Bytes(torrent.DownloadedEver), humanize.Bytes(torrent.UploadedEver),
 				time.Unix(torrent.AddedDate, 0).Format(time.Stamp), trackers)
 

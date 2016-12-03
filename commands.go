@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/pyed/transmission"
 	"gopkg.in/telegram-bot-api.v4"
@@ -249,6 +250,20 @@ LenCheck:
 	}
 
 	return resp.MessageID
+}
+
+func sendTorrents(bot *tgbotapi.BotAPI, ud UpdateWrapper, torrents transmission.Torrents) {
+	buf := new(bytes.Buffer)
+	for _, torrent := range torrents {
+		buf.WriteString(fmt.Sprintf("*%d* `%s` _%s_\n", torrent.ID, ellipsisString(torrent.Name, 25), torrent.TorrentStatus()))
+	}
+
+	if buf.Len() == 0 {
+		send(bot, "No torrents", ud.Message.Chat.ID, false)
+		return
+	}
+
+	send(bot, buf.String(), ud.Message.Chat.ID, true)
 }
 
 // addTorrentsByURL adds torrent files or magnet links passed by rls

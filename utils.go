@@ -29,10 +29,27 @@ func (w UpdateWrapper) Tokens() []string {
 }
 
 type CommandHandler func(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper)
+type TorrentFilter func(torrent *transmission.Torrent) bool
 
 func ellipsisString(str string, length int) string {
 	if utf8.RuneCountInString(str) > length {
 		return string([]rune(str)[:length-3]) + "..."
 	}
 	return str
+}
+
+func sendFilteredTorrets(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper, filter TorrentFilter) {
+	torrents, err := client.GetTorrents()
+	if err != nil {
+		send(bot, "Torrents obtain error: "+err.Error(), ud.Message.Chat.ID, false)
+		return
+	}
+
+	filteredTorrents := transmission.Torrents{}
+	for _, torrent := range torrents {
+		if filter(torrent) {
+			filteredTorrents = append(filteredTorrents, torrent)
+		}
+	}
+	sendTorrents(bot, ud, filteredTorrents)
 }
