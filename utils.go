@@ -6,6 +6,7 @@ import (
 	"github.com/pyed/transmission"
 	"gopkg.in/telegram-bot-api.v4"
 	"log"
+	"reflect"
 	"strings"
 	"unicode/utf8"
 )
@@ -144,4 +145,31 @@ func sendFilteredTorrets(bot *tgbotapi.BotAPI, client *transmission.Transmission
 		}
 	}
 	sendTorrents(bot, ud, filteredTorrents)
+}
+
+func InvokeError(any interface{}, name string, args ...interface{}) error {
+	inputs := make([]reflect.Value, len(args))
+	for i, _ := range args {
+		inputs[i] = reflect.ValueOf(args[i])
+	}
+	err := reflect.ValueOf(any).MethodByName(name).Call(inputs)[0].Interface()
+	if err != nil {
+		return err.(error)
+	}
+	return nil
+}
+
+func InvokeStatus(any interface{}, name string, args ...interface{}) (string, error) {
+	inputs := make([]reflect.Value, len(args))
+	for i, _ := range args {
+		inputs[i] = reflect.ValueOf(args[i])
+	}
+	results := reflect.ValueOf(any).MethodByName(name).Call(inputs)
+	log.Println(results)
+	status := results[0].String()
+	err := results[1].Interface()
+	if err != nil {
+		return status, err.(error)
+	}
+	return status, nil
 }

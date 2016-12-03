@@ -8,6 +8,17 @@ import (
 	"strings"
 )
 
+var (
+	MainCommands = map[string]string{
+		"stop all":  "StopAll",
+		"stop":      "StopTorrent",
+		"start all": "StartAll",
+		"start":     "StartTorrent",
+		"check all": "VerifyAll",
+		"check":     "VerifyTorrent",
+	}
+)
+
 // receiveTorrent gets an update that potentially has a .torrent file to add
 func receiveTorrent(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
 	if ud.Message.Document.FileID == "" {
@@ -29,123 +40,42 @@ func receiveTorrent(bot *tgbotapi.BotAPI, client *transmission.TransmissionClien
 }
 
 // stop takes id[s] of torrent[s] or 'all' to stop them
-func stop(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
+func mainCommand(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
 	// make sure that we got at least one argument
 	if len(ud.Tokens()) == 0 {
-		send(bot, "*stop*: needs an argument", ud.Message.Chat.ID)
+		send(bot, fmt.Sprintf("*%s*: needs an argument", ud.Command()), ud.Message.Chat.ID)
 		return
 	}
 
 	// if the first argument is 'all' then stop all torrents
 	if ud.Tokens()[0] == "all" {
-		if err := client.StopAll(); err != nil {
-			send(bot, "*stop*: error occurred while stopping some torrents", ud.Message.Chat.ID)
+		if err := InvokeError(client, MainCommands[fmt.Sprintf("%s all", ud.Command())]); err != nil {
+			send(bot, fmt.Sprintf("*%s*: error occurred", ud.Command()), ud.Message.Chat.ID)
 			return
 		}
-		send(bot, "*stop*: all torrents stopped", ud.Message.Chat.ID)
+		send(bot, fmt.Sprintf("*%s*: ok", ud.Command()), ud.Message.Chat.ID)
 		return
 	}
 
 	for _, id := range ud.Tokens() {
 		num, err := strconv.Atoi(id)
 		if err != nil {
-			send(bot, fmt.Sprintf("*stop*: `%s` is not a number", id), ud.Message.Chat.ID)
+			send(bot, fmt.Sprintf("*%s*: `%s` is not a number", ud.Command(), id), ud.Message.Chat.ID)
 			continue
 		}
-		status, err := client.StopTorrent(num)
+		status, err := InvokeStatus(client, MainCommands[ud.Command()], num)
 		if err != nil {
-			send(bot, fmt.Sprintf("*stop*: `%s`", err.Error()), ud.Message.Chat.ID)
-			continue
-		}
-
-		torrent, err := client.GetTorrent(num)
-		if err != nil {
-			send(bot, fmt.Sprintf("*[fail] stop*: No torrent with an ID of %d", num), ud.Message.Chat.ID)
-			return
-		}
-		send(bot, fmt.Sprintf("*[%s] stop*: `%s`", status, torrent.Name), ud.Message.Chat.ID)
-	}
-}
-
-// start takes id[s] of torrent[s] or 'all' to start them
-func start(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
-	// make sure that we got at least one argument
-	if len(ud.Tokens()) == 0 {
-		send(bot, "*start*: needs an argument", ud.Message.Chat.ID)
-		return
-	}
-
-	// if the first argument is 'all' then start all torrents
-	if ud.Tokens()[0] == "all" {
-		if err := client.StartAll(); err != nil {
-			send(bot, "*start*: error occurred while starting some torrents", ud.Message.Chat.ID)
-			return
-		}
-		send(bot, "*start*: all torrents started", ud.Message.Chat.ID)
-		return
-
-	}
-
-	for _, id := range ud.Tokens() {
-		num, err := strconv.Atoi(id)
-		if err != nil {
-			send(bot, fmt.Sprintf("*start*: `%s` is not a number", id), ud.Message.Chat.ID)
-			continue
-		}
-		status, err := client.StartTorrent(num)
-		if err != nil {
-			send(bot, fmt.Sprintf("*start*: `%s`", err.Error()), ud.Message.Chat.ID)
+			send(bot, fmt.Sprintf("*%s*: `%s`", ud.Command(), err.Error()), ud.Message.Chat.ID)
 			continue
 		}
 
 		torrent, err := client.GetTorrent(num)
 		if err != nil {
-			send(bot, fmt.Sprintf("*[fail] start*: No torrent with an ID of %d", num), ud.Message.Chat.ID)
+			send(bot, fmt.Sprintf("*[fail] %s*: No torrent with an ID of %d", ud.Command(), num), ud.Message.Chat.ID)
 			return
 		}
-		send(bot, fmt.Sprintf("*[%s] start: `%s`", status, torrent.Name), ud.Message.Chat.ID)
+		send(bot, fmt.Sprintf("*[%s] %s*: `%s`", status, ud.Command(), torrent.Name), ud.Message.Chat.ID)
 	}
-}
-
-// check takes id[s] of torrent[s] or 'all' to verify them
-func check(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
-	// make sure that we got at least one argument
-	if len(ud.Tokens()) == 0 {
-		send(bot, "*check*: needs an argument", ud.Message.Chat.ID)
-		return
-	}
-
-	// if the first argument is 'all' then start all torrents
-	if ud.Tokens()[0] == "all" {
-		if err := client.VerifyAll(); err != nil {
-			send(bot, "*check*: error occurred while verifying some torrents", ud.Message.Chat.ID)
-			return
-		}
-		send(bot, "*check*: verifying all torrents", ud.Message.Chat.ID)
-		return
-
-	}
-
-	for _, id := range ud.Tokens() {
-		num, err := strconv.Atoi(id)
-		if err != nil {
-			send(bot, fmt.Sprintf("*check*: `%s` is not a number", id), ud.Message.Chat.ID)
-			continue
-		}
-		status, err := client.VerifyTorrent(num)
-		if err != nil {
-			send(bot, fmt.Sprintf("*stop*: `%s`", err.Error()), ud.Message.Chat.ID)
-			continue
-		}
-
-		torrent, err := client.GetTorrent(num)
-		if err != nil {
-			send(bot, fmt.Sprintf("*[fail] check*: No torrent with an ID of %d", num), ud.Message.Chat.ID)
-			return
-		}
-		send(bot, fmt.Sprintf("*[%s] check*: `%s`", status, torrent.Name), ud.Message.Chat.ID)
-	}
-
 }
 
 // del takes an id or more, and delete the corresponding torrent/s

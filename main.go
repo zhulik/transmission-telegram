@@ -195,14 +195,8 @@ func findHandler(command string) CommandHandler {
 	case "info", "/info", "in", "/in":
 		return info
 
-	case "stop", "/stop", "sp", "/sp":
-		return stop
-
-	case "start", "/start", "st", "/st":
-		return start
-
-	case "check", "/check", "ck", "/ck":
-		return check
+	case "stop", "/stop", "sp", "/sp", "start", "/start", "st", "/st", "check", "/check", "ck", "/ck":
+		return mainCommand
 
 	case "stats", "/stats", "sa", "/sa":
 		return stats
