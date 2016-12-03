@@ -10,7 +10,7 @@ import (
 )
 
 // receiveTorrent gets an update that potentially has a .torrent file to add
-func receiveTorrent(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, token string, ud UpdateWrapper) {
+func receiveTorrent(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
 	if ud.Message.Document.FileID == "" {
 		return // has no document
 	}
@@ -26,7 +26,7 @@ func receiveTorrent(bot *tgbotapi.BotAPI, client *transmission.TransmissionClien
 	}
 
 	// add by file URL
-	add(bot, client, ud, []string{file.Link(token)})
+	addTorrentsByURL(bot, client, ud, []string{file.Link(bot.Token)})
 }
 
 // stop takes id[s] of torrent[s] or 'all' to stop them
@@ -251,8 +251,7 @@ LenCheck:
 	return resp.MessageID
 }
 
-// add takes an URL to a .torrent file to add it to transmission
-func add(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper, urls []string) {
+func addTorrentsByURL(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper, urls []string) {
 	if len(urls) == 0 {
 		send(bot, "add: needs atleast one URL", ud.Message.Chat.ID, false)
 		return
@@ -275,4 +274,19 @@ func add(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud Updat
 		}
 		send(bot, fmt.Sprintf("Added: <%d> %s", torrent.ID, torrent.Name), ud.Message.Chat.ID, false)
 	}
+}
+
+// add takes an URL to a .torrent file to add it to transmission
+func add(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
+	addTorrentsByURL(bot, client, ud, ud.Tokens())
+}
+
+// help sends help messsage
+func help(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
+	send(bot, HELP, ud.Message.Chat.ID, true)
+}
+
+// unknownCommand sends message that command is unknown
+func unknownCommand(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
+	send(bot, "no such command, try /help", ud.Message.Chat.ID, false)
 }

@@ -180,78 +180,90 @@ func main() {
 			continue
 		}
 
-		switch wrapper.Command() {
-		case "list", "/list", "li", "/li":
-			go list(bot, client, wrapper)
+		go func() {
+			defer func() {
+				if recover() != nil {
+					send(bot, "PANIC: something goes wrong...", wrapper.Message.Chat.ID, true)
+				}
+			}()
+			findHandler(wrapper.Command())(bot, client, wrapper)
+		}()
 
-		case "downs", "/downs", "dl", "/dl":
-			go downs(bot, client, wrapper)
+	}
+}
 
-		case "seeding", "/seeding", "sd", "/sd":
-			go seeding(bot, client, wrapper)
+func findHandler(command string) CommandHandler {
+	switch command {
+	case "list", "/list", "li", "/li":
+		return list
 
-		case "paused", "/paused", "pa", "/pa":
-			go paused(bot, client, wrapper)
+	case "downs", "/downs", "dl", "/dl":
+		return downs
 
-		case "checking", "/checking", "ch", "/ch":
-			go checking(bot, client, wrapper)
+	case "seeding", "/seeding", "sd", "/sd":
+		return seeding
 
-		case "active", "/active", "ac", "/ac":
-			go active(bot, client, wrapper)
+	case "paused", "/paused", "pa", "/pa":
+		return paused
 
-		case "errors", "/errors", "er", "/er":
-			go errors(bot, client, wrapper)
+	case "checking", "/checking", "ch", "/ch":
+		return checking
 
-		case "sort", "/sort", "so", "/so":
-			go sort(bot, client, wrapper)
+	case "active", "/active", "ac", "/ac":
+		return active
 
-		case "trackers", "/trackers", "tr", "/tr":
-			go trackers(bot, client, wrapper)
+	case "errors", "/errors", "er", "/er":
+		return errors
 
-		case "add", "/add", "ad", "/ad":
-			go add(bot, client, wrapper, wrapper.Tokens())
+	case "sort", "/sort", "so", "/so":
+		return sort
 
-		case "search", "/search", "se", "/se":
-			go search(bot, client, wrapper)
+	case "trackers", "/trackers", "tr", "/tr":
+		return trackers
 
-		case "info", "/info", "in", "/in":
-			go info(bot, client, wrapper)
+	case "add", "/add", "ad", "/ad":
+		return add
 
-		case "stop", "/stop", "sp", "/sp":
-			go stop(bot, client, wrapper)
+	case "search", "/search", "se", "/se":
+		return search
 
-		case "start", "/start", "st", "/st":
-			go start(bot, client, wrapper)
+	case "info", "/info", "in", "/in":
+		return info
 
-		case "check", "/check", "ck", "/ck":
-			go check(bot, client, wrapper)
+	case "stop", "/stop", "sp", "/sp":
+		return stop
 
-		case "stats", "/stats", "sa", "/sa":
-			go stats(bot, client, wrapper)
+	case "start", "/start", "st", "/st":
+		return start
 
-		case "speed", "/speed", "ss", "/ss":
-			go speed(bot, client, wrapper)
+	case "check", "/check", "ck", "/ck":
+		return check
 
-		case "count", "/count", "co", "/co":
-			go count(bot, client, wrapper)
+	case "stats", "/stats", "sa", "/sa":
+		return stats
 
-		case "del", "/del":
-			go del(bot, client, wrapper)
+	case "speed", "/speed", "ss", "/ss":
+		return speed
 
-		case "deldata", "/deldata":
-			go deldata(bot, client, wrapper)
+	case "count", "/count", "co", "/co":
+		return count
 
-		case "help", "/help":
-			go send(bot, HELP, wrapper.Message.Chat.ID, true)
+	case "del", "/del":
+		return del
 
-		case "version", "/version":
-			go version(bot, client, wrapper)
+	case "deldata", "/deldata":
+		return deldata
 
-		case "":
-			go receiveTorrent(bot, client, botToken, wrapper)
+	case "help", "/help":
+		return help
 
-		default:
-			go send(bot, "no such command, try /help", wrapper.Message.Chat.ID, false)
-		}
+	case "version", "/version":
+		return version
+
+	case "":
+		return receiveTorrent
+
+	default:
+		return unknownCommand
 	}
 }
