@@ -34,14 +34,14 @@ const (
 	*errors* or *er*
 	Lists torrents with with errors along with the error message.
 
+	*search* or *se*
+	Takes a query and lists torrents with matching names.
+
 	*sort* or *so*
 	Manipulate the sorting of the aforementioned commands, Call it without arguments for more.
 
 	*add* or *ad*
 	Takes one or many URLs or magnets to add them, You can send a .torrent file via Telegram to add it.
-
-	*search* or *se*
-	Takes a query and lists torrents with matching names.
 
 	*info* or *in*
 	Takes one or more torrent's IDs to list more info about them.
@@ -178,7 +178,7 @@ func main() {
 		go func() {
 			defer func() {
 				if recover() != nil {
-					send(bot, "PANIC: something goes wrong...", wrapper.Message.Chat.ID, true)
+					send(bot, "PANIC: something goes wrong...", wrapper.Message.Chat.ID)
 					log.Println(string(debug.Stack()))
 				}
 			}()

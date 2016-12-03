@@ -62,7 +62,7 @@ func errors(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud Up
 func search(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
 	// make sure that we got a query
 	if len(ud.Tokens()) == 0 {
-		send(bot, "search: needs an argument", ud.Message.Chat.ID, false)
+		send(bot, "*search*: needs an argument", ud.Message.Chat.ID)
 		return
 	}
 
@@ -70,7 +70,7 @@ func search(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud Up
 	// "(?i)" for case insensitivity
 	regx, err := regexp.Compile("(?i)" + query)
 	if err != nil {
-		send(bot, "search: "+err.Error(), ud.Message.Chat.ID, false)
+		send(bot, "*search*: "+err.Error(), ud.Message.Chat.ID)
 		return
 	}
 
@@ -83,7 +83,7 @@ func search(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud Up
 func count(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
 	torrents, err := client.GetTorrents()
 	if err != nil {
-		send(bot, "count: "+err.Error(), ud.Message.Chat.ID, false)
+		send(bot, "*count*: "+err.Error(), ud.Message.Chat.ID)
 		return
 	}
 
@@ -108,31 +108,31 @@ func count(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud Upd
 		}
 	}
 
-	msg := fmt.Sprintf("Downloading: %d\nSeeding: %d\nPaused: %d\nVerifying: %d\n\n- Waiting to -\nDownload: %d\nSeed: %d\nVerify: %d\n\nTotal: %d",
+	msg := fmt.Sprintf("*Downloading*: %d\n*Seeding*: %d\n*Paused*: %d\n*Verifying*: %d\n\n- Waiting to -\n*Download*: %d\n*Seed*: %d\n*Verify*: %d\n\n*Total*: %d",
 		downloading, seeding, stopped, checking, downloadingQ, seedingQ, checkingQ, len(torrents))
 
-	send(bot, msg, ud.Message.Chat.ID, false)
+	send(bot, msg, ud.Message.Chat.ID)
 
 }
 
 // info takes an id of a torrent and returns some info about it
 func info(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
 	if len(ud.Tokens()) == 0 {
-		send(bot, "info: needs a torrent ID number", ud.Message.Chat.ID, false)
+		send(bot, "*info*: needs a torrent ID number", ud.Message.Chat.ID)
 		return
 	}
 
 	for _, id := range ud.Tokens() {
 		torrentID, err := strconv.Atoi(id)
 		if err != nil {
-			send(bot, fmt.Sprintf("info: %s is not a number", id), ud.Message.Chat.ID, false)
+			send(bot, fmt.Sprintf("*info*: %s is not a number", id), ud.Message.Chat.ID)
 			continue
 		}
 
 		// get the torrent
 		torrent, err := client.GetTorrent(torrentID)
 		if err != nil {
-			send(bot, fmt.Sprintf("info: Can't find a torrent with an ID of %d", torrentID), ud.Message.Chat.ID, false)
+			send(bot, fmt.Sprintf("*info*: Can't find a torrent with an ID of %d", torrentID), ud.Message.Chat.ID)
 			continue
 		}
 
@@ -152,49 +152,56 @@ func info(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud Upda
 			torrent.ETA(), trackers)
 
 		// send it
-		msgID := send(bot, info, ud.Message.Chat.ID, true)
+		msgID := send(bot, info, ud.Message.Chat.ID)
 
 		// this go-routine will make the info live for 'duration * interval'
 		// takes trackers so we don't have to regex them over and over.
-		go func(trackers string, torrentID, msgID int) {
-			for i := 0; i < duration; i++ {
-				time.Sleep(time.Second * interval)
-				torrent, err := client.GetTorrent(torrentID)
-				if err != nil {
-					continue // skip this iteration if there's an error retrieving the torrent's info
-				}
-
-				info := fmt.Sprintf("*%d* `%s`\n%s *%s* of *%s* (*%.1f%%*) ↓ *%s*  ↑ *%s* R: *%s*\nDL: *%s* UP: *%s*\nAdded: *%s*, ETA: *%s*\nTrackers: `%s`",
-					torrent.ID, torrent.Name, torrent.TorrentStatus(), humanize.Bytes(torrent.Have()), humanize.Bytes(torrent.SizeWhenDone),
-					torrent.PercentDone*100, humanize.Bytes(torrent.RateDownload), humanize.Bytes(torrent.RateUpload), torrent.Ratio(),
-					humanize.Bytes(torrent.DownloadedEver), humanize.Bytes(torrent.UploadedEver), time.Unix(torrent.AddedDate, 0).Format(time.Stamp),
-					torrent.ETA(), trackers)
-
-				// update the message
-				editConf := tgbotapi.NewEditMessageText(ud.Message.Chat.ID, msgID, info)
-				editConf.ParseMode = tgbotapi.ModeMarkdown
-				bot.Send(editConf)
-
-			}
-
-			// at the end write dashes to indicate that we are done being live.
-			info := fmt.Sprintf("*%d* `%s`\n%s *%s* of *%s* (*%.1f%%*) ↓ *- B*  ↑ *- B* R: *%s*\nDL: *%s* UP: *%s*\nAdded: *%s*, ETA: *-*\nTrackers: `%s`",
-				torrent.ID, torrent.Name, torrent.TorrentStatus(), humanize.Bytes(torrent.Have()), humanize.Bytes(torrent.SizeWhenDone),
-				torrent.PercentDone*100, torrent.Ratio(), humanize.Bytes(torrent.DownloadedEver), humanize.Bytes(torrent.UploadedEver),
-				time.Unix(torrent.AddedDate, 0).Format(time.Stamp), trackers)
-
-			editConf := tgbotapi.NewEditMessageText(ud.Message.Chat.ID, msgID, info)
-			editConf.ParseMode = tgbotapi.ModeMarkdown
-			bot.Send(editConf)
-		}(trackers, torrentID, msgID)
+		go updateTorrentInfo(bot, client, ud, trackers, torrentID, msgID)
 	}
+}
+
+func updateTorrentInfo(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper, trackers string, torrentID, msgID int) {
+	for i := 0; i < duration; i++ {
+		time.Sleep(time.Second * interval)
+		torrent, err := client.GetTorrent(torrentID)
+		if err != nil {
+			continue // skip this iteration if there's an error retrieving the torrent's info
+		}
+
+		info := fmt.Sprintf("*%d* `%s`\n%s *%s* of *%s* (*%.1f%%*) ↓ *%s*  ↑ *%s* R: *%s*\nDL: *%s* UP: *%s*\nAdded: *%s*, ETA: *%s*\nTrackers: `%s`",
+			torrent.ID, torrent.Name, torrent.TorrentStatus(), humanize.Bytes(torrent.Have()), humanize.Bytes(torrent.SizeWhenDone),
+			torrent.PercentDone*100, humanize.Bytes(torrent.RateDownload), humanize.Bytes(torrent.RateUpload), torrent.Ratio(),
+			humanize.Bytes(torrent.DownloadedEver), humanize.Bytes(torrent.UploadedEver), time.Unix(torrent.AddedDate, 0).Format(time.Stamp),
+			torrent.ETA(), trackers)
+
+		// update the message
+		editConf := tgbotapi.NewEditMessageText(ud.Message.Chat.ID, msgID, info)
+		editConf.ParseMode = tgbotapi.ModeMarkdown
+		bot.Send(editConf)
+
+	}
+
+	torrent, err := client.GetTorrent(torrentID)
+	if err != nil {
+		return
+	}
+
+	// at the end write dashes to indicate that we are done being live.
+	info := fmt.Sprintf("*%d* `%s`\n%s *%s* of *%s* (*%.1f%%*) ↓ *- B*  ↑ *- B* R: *%s*\nDL: *%s* UP: *%s*\nAdded: *%s*, ETA: *-*\nTrackers: `%s`",
+		torrent.ID, torrent.Name, torrent.TorrentStatus(), humanize.Bytes(torrent.Have()), humanize.Bytes(torrent.SizeWhenDone),
+		torrent.PercentDone*100, torrent.Ratio(), humanize.Bytes(torrent.DownloadedEver), humanize.Bytes(torrent.UploadedEver),
+		time.Unix(torrent.AddedDate, 0).Format(time.Stamp), trackers)
+
+	editConf := tgbotapi.NewEditMessageText(ud.Message.Chat.ID, msgID, info)
+	editConf.ParseMode = tgbotapi.ModeMarkdown
+	bot.Send(editConf)
 }
 
 // stats echo back transmission stats
 func stats(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
 	stats, err := client.GetStats()
 	if err != nil {
-		send(bot, "stats: "+err.Error(), ud.Message.Chat.ID, false)
+		send(bot, "*stats*: "+err.Error(), ud.Message.Chat.ID)
 		return
 	}
 
@@ -228,7 +235,7 @@ func stats(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud Upd
 		stats.CumulativeActiveTime(),
 	)
 
-	send(bot, msg, ud.Message.Chat.ID, true)
+	send(bot, msg, ud.Message.Chat.ID)
 }
 
 // speed will echo back the current download and upload speeds
@@ -238,15 +245,15 @@ func speed(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud Upd
 	for i := 0; i < duration; i++ {
 		stats, err := client.GetStats()
 		if err != nil {
-			send(bot, "speed: "+err.Error(), ud.Message.Chat.ID, false)
+			send(bot, "*speed*: "+err.Error(), ud.Message.Chat.ID)
 			return
 		}
 
-		msg := fmt.Sprintf("↓ %s  ↑ %s", humanize.Bytes(stats.DownloadSpeed), humanize.Bytes(stats.UploadSpeed))
+		msg := fmt.Sprintf("↓ *%s*  ↑ *%s*", humanize.Bytes(stats.DownloadSpeed), humanize.Bytes(stats.UploadSpeed))
 
 		// if we haven't send a message, send it and save the message ID to edit it the next iteration
 		if msgID == 0 {
-			msgID = send(bot, msg, ud.Message.Chat.ID, false)
+			msgID = send(bot, msg, ud.Message.Chat.ID)
 			time.Sleep(time.Second * interval)
 			continue
 		}

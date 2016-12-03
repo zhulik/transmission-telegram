@@ -75,7 +75,7 @@ func ellipsisString(str string, length int) string {
 }
 
 // send takes a chat id and a message to send, returns the message id of the send message
-func send(bot *tgbotapi.BotAPI, text string, chatID int64, markdown bool) int {
+func send(bot *tgbotapi.BotAPI, text string, chatID int64) int {
 	// set typing action
 	action := tgbotapi.NewChatAction(chatID, tgbotapi.ChatTyping)
 	bot.Send(action)
@@ -91,9 +91,7 @@ LenCheck:
 		}
 		msg := tgbotapi.NewMessage(chatID, text[:stop])
 		msg.DisableWebPagePreview = true
-		if markdown {
-			msg.ParseMode = tgbotapi.ModeMarkdown
-		}
+		msg.ParseMode = tgbotapi.ModeMarkdown
 
 		// send current chunk
 		if _, err := bot.Send(msg); err != nil {
@@ -108,9 +106,7 @@ LenCheck:
 	// if msgRuneCount < 4096, send it normally
 	msg := tgbotapi.NewMessage(chatID, text)
 	msg.DisableWebPagePreview = true
-	if markdown {
-		msg.ParseMode = tgbotapi.ModeMarkdown
-	}
+	msg.ParseMode = tgbotapi.ModeMarkdown
 
 	resp, err := bot.Send(msg)
 	if err != nil {
@@ -127,17 +123,17 @@ func sendTorrents(bot *tgbotapi.BotAPI, ud UpdateWrapper, torrents transmission.
 	}
 
 	if buf.Len() == 0 {
-		send(bot, "No torrents", ud.Message.Chat.ID, false)
+		send(bot, "No torrents", ud.Message.Chat.ID)
 		return
 	}
 
-	send(bot, buf.String(), ud.Message.Chat.ID, true)
+	send(bot, buf.String(), ud.Message.Chat.ID)
 }
 
 func sendFilteredTorrets(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper, filter TorrentFilter) {
 	torrents, err := client.GetTorrents()
 	if err != nil {
-		send(bot, "Torrents obtain error: "+err.Error(), ud.Message.Chat.ID, false)
+		send(bot, "Torrents obtain error: "+err.Error(), ud.Message.Chat.ID)
 		return
 	}
 
