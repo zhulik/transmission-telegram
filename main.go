@@ -91,18 +91,18 @@ const (
 
 func main() {
 	var botToken string
-	var Master string
-	var RPCURL string
-	var Username string
-	var Password string
-	var LogFile string
-	// define arguments and parse them.
+	var masterUsername string
+	var transmissionURL string
+	var transmissionUsername string
+	var transmissionPassword string
+	var logFile string
+
 	flag.StringVar(&botToken, "token", "", "Telegram bot token")
-	flag.StringVar(&Master, "master", "", "Your telegram handler, So the bot will only respond to you")
-	flag.StringVar(&RPCURL, "url", "http://localhost:9091/transmission/rpc", "Transmission RPC URL")
-	flag.StringVar(&Username, "username", "", "Transmission username")
-	flag.StringVar(&Password, "password", "", "Transmission password")
-	flag.StringVar(&LogFile, "logfile", "", "Send logs to a file")
+	flag.StringVar(&masterUsername, "master", "", "Your telegram handler, So the bot will only respond to you")
+	flag.StringVar(&transmissionURL, "url", "http://localhost:9091/transmission/rpc", "Transmission RPC URL")
+	flag.StringVar(&transmissionUsername, "username", "", "Transmission username")
+	flag.StringVar(&transmissionPassword, "password", "", "Transmission password")
+	flag.StringVar(&logFile, "logfile", "", "Send logs to a file")
 
 	// set the usage message
 	flag.Usage = func() {
@@ -114,18 +114,18 @@ func main() {
 
 	// make sure that we have the two madatory arguments: telegram token & master's handler.
 	if botToken == "" ||
-		Master == "" {
+		masterUsername == "" {
 		fmt.Fprintf(os.Stderr, "Error: Mandatory argument missing! (-token or -master)\n\n")
 		flag.Usage()
 		os.Exit(1)
 	}
 
 	// make sure that the handler doesn't contain @
-	Master = strings.Replace(Master, "@", "", -1)
+	masterUsername = strings.Replace(masterUsername, "@", "", -1)
 
 	// if we got a log file, log to it
-	if LogFile != "" {
-		logf, err := os.OpenFile(LogFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if logFile != "" {
+		logf, err := os.OpenFile(logFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -133,17 +133,17 @@ func main() {
 	}
 
 	// if the `-username` flag isn't set, look into the environment variable 'TR_AUTH'
-	if Username == "" {
+	if transmissionUsername == "" {
 		if values := strings.Split(os.Getenv("TR_AUTH"), ":"); len(values) > 1 {
-			Username, Password = values[0], values[1]
+			transmissionUsername, transmissionPassword = values[0], values[1]
 		}
 	}
 
 	// log the flags
 	log.Printf("[INFO] Token=%s\nMaster=%s\nURL=%s\nUSER=%s\nPASS=%s",
-		botToken, Master, RPCURL, Username, Password)
+		botToken, masterUsername, transmissionURL, transmissionUsername, transmissionPassword)
 
-	client, err := transmission.New(RPCURL, Username, Password)
+	client, err := transmission.New(transmissionURL, transmissionUsername, transmissionPassword)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "[ERROR] Transmission: Make sure you have the right URL, Username and Password")
 		os.Exit(1)
@@ -172,7 +172,7 @@ func main() {
 		}
 
 		// ignore anyone other than 'master'
-		if strings.ToLower(update.Message.From.UserName) != strings.ToLower(Master) {
+		if strings.ToLower(update.Message.From.UserName) != strings.ToLower(masterUsername) {
 			log.Printf("[INFO] Ignored a message from: %s", update.Message.From.String())
 			continue
 		}
