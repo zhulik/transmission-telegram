@@ -51,7 +51,7 @@ type UpdateWrapper struct {
 
 func WrapUpdate(update tgbotapi.Update) UpdateWrapper {
 	tokens := strings.Split(update.Message.Text, " ")
-	command := tokens[0]
+	command := strings.ToLower(tokens[0])
 	args := tokens[1:]
 	return UpdateWrapper{update, command, args}
 }
