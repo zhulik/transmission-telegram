@@ -6,7 +6,6 @@ import (
 	"github.com/dustin/go-humanize"
 	"github.com/pyed/transmission"
 	"gopkg.in/telegram-bot-api.v4"
-	"log"
 	"regexp"
 	"strconv"
 	"strings"
@@ -22,8 +21,6 @@ var (
 )
 
 // list will form and send a list of all the torrents
-// takes an optional argument which is a query to match against trackers
-// to list only torrents that has a tracker that matchs.
 func list(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
 	torrents, err := client.GetTorrents()
 	if err != nil {
@@ -32,37 +29,16 @@ func list(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud Upda
 	}
 
 	buf := new(bytes.Buffer)
-	// if it gets a query, it will list torrents that has trackers that match the query
-	if len(ud.Tokens()) != 0 {
-		// (?i) for case insensitivity
-		regx, err := regexp.Compile("(?i)" + ud.Tokens()[0])
-		if err != nil {
-			send(bot, "list: "+err.Error(), ud.Message.Chat.ID, false)
-			return
-		}
-
-		for i := range torrents {
-			if regx.MatchString(torrents[i].GetTrackers()) {
-				buf.WriteString(fmt.Sprintf("<%d> %s\n", torrents[i].ID, torrents[i].Name))
-			}
-		}
-	} else { // if we did not get a query, list all torrents
-		for i := range torrents {
-			buf.WriteString(fmt.Sprintf("<%d> %s\n", torrents[i].ID, torrents[i].Name))
-		}
+	for _, torrent := range torrents {
+		buf.WriteString(fmt.Sprintf("*%d* `%s` _%s_\n", torrent.ID, ellipsisString(torrent.Name, 25), torrent.TorrentStatus()))
 	}
 
 	if buf.Len() == 0 {
-		// if we got a tracker query show different message
-		if len(ud.Tokens()) != 0 {
-			send(bot, fmt.Sprintf("list: No tracker matches: *%s*", ud.Tokens()[0]), ud.Message.Chat.ID, true)
-			return
-		}
 		send(bot, "list: No torrents", ud.Message.Chat.ID, false)
 		return
 	}
 
-	send(bot, buf.String(), ud.Message.Chat.ID, false)
+	send(bot, buf.String(), ud.Message.Chat.ID, true)
 }
 
 // downs will send the names of torrents with status 'Downloading' or in queue to
@@ -165,82 +141,6 @@ func checking(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud 
 	}
 
 	send(bot, buf.String(), ud.Message.Chat.ID, false)
-}
-
-// active will send torrents that are actively downloading or uploading
-func active(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
-	torrents, err := client.GetTorrents()
-	if err != nil {
-		send(bot, "active: "+err.Error(), ud.Message.Chat.ID, false)
-		return
-	}
-
-	buf := new(bytes.Buffer)
-	for i := range torrents {
-		if torrents[i].RateDownload > 0 ||
-			torrents[i].RateUpload > 0 {
-			// escape markdown
-			torrentName := mdReplacer.Replace(torrents[i].Name)
-			buf.WriteString(fmt.Sprintf("`<%d>` *%s*\n%s *%s* of *%s* (*%.1f%%*) ↓ *%s*  ↑ *%s* R: *%s*\n\n",
-				torrents[i].ID, torrentName, torrents[i].TorrentStatus(), humanize.Bytes(torrents[i].Have()),
-				humanize.Bytes(torrents[i].SizeWhenDone), torrents[i].PercentDone*100, humanize.Bytes(torrents[i].RateDownload),
-				humanize.Bytes(torrents[i].RateUpload), torrents[i].Ratio()))
-		}
-	}
-	if buf.Len() == 0 {
-		send(bot, "No active torrents", ud.Message.Chat.ID, false)
-		return
-	}
-
-	msgID := send(bot, buf.String(), ud.Message.Chat.ID, true)
-
-	// keep the active list live for 'duration * interval'
-	for i := 0; i < duration; i++ {
-		time.Sleep(time.Second * interval)
-		// reset the buffer to reuse it
-		buf.Reset()
-
-		// update torrents
-		torrents, err = client.GetTorrents()
-		if err != nil {
-			continue // if there was error getting torrents, skip to the next iteration
-		}
-
-		// do the same loop again
-		for i := range torrents {
-			if torrents[i].RateDownload > 0 ||
-				torrents[i].RateUpload > 0 {
-				torrentName := mdReplacer.Replace(torrents[i].Name) // replace markdown chars
-				buf.WriteString(fmt.Sprintf("`<%d>` *%s*\n%s *%s* of *%s* (*%.1f%%*) ↓ *%s*  ↑ *%s* R: *%s*\n\n",
-					torrents[i].ID, torrentName, torrents[i].TorrentStatus(), humanize.Bytes(torrents[i].Have()),
-					humanize.Bytes(torrents[i].SizeWhenDone), torrents[i].PercentDone*100, humanize.Bytes(torrents[i].RateDownload),
-					humanize.Bytes(torrents[i].RateUpload), torrents[i].Ratio()))
-			}
-		}
-
-		// no need to check if it is empty, as if the buffer is empty telegram won't change the message
-		editConf := tgbotapi.NewEditMessageText(ud.Message.Chat.ID, msgID, buf.String())
-		editConf.ParseMode = tgbotapi.ModeMarkdown
-		bot.Send(editConf)
-	}
-
-	// replace the speed with dashes to indicate that we are done being live
-	buf.Reset()
-	for i := range torrents {
-		if torrents[i].RateDownload > 0 ||
-			torrents[i].RateUpload > 0 {
-			// escape markdown
-			torrentName := mdReplacer.Replace(torrents[i].Name)
-			buf.WriteString(fmt.Sprintf("`<%d>` *%s*\n%s *%s* of *%s* (*%.1f%%*) ↓ *-*  ↑ *-* R: *%s*\n\n",
-				torrents[i].ID, torrentName, torrents[i].TorrentStatus(), humanize.Bytes(torrents[i].Have()),
-				humanize.Bytes(torrents[i].SizeWhenDone), torrents[i].PercentDone*100, torrents[i].Ratio()))
-		}
-	}
-
-	editConf := tgbotapi.NewEditMessageText(ud.Message.Chat.ID, msgID, buf.String())
-	editConf.ParseMode = tgbotapi.ModeMarkdown
-	bot.Send(editConf)
-
 }
 
 // errors will send torrents with errors

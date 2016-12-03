@@ -19,7 +19,7 @@ const (
 	*list* or *li*
 	Lists all the torrents, takes an optional argument which is a query to list only torrents that has a tracker matches the query, or some of it.
 
-	*down* or *dl*
+	*downs* or *dl*
 	Lists torrents with the status of Downloading or in the queue to download.
 
 	*seeding* or *sd*
@@ -30,9 +30,6 @@ const (
 
 	*checking* or *ch*
 	Lists torrents with the status of Verifying or in the queue to verify.
-
-	*active* or *ac*
-	Lists torrents that are actively uploading or downloading.
 
 	*errors* or *er*
 	Lists torrents with with errors along with the error message.
@@ -210,9 +207,6 @@ func findHandler(command string) CommandHandler {
 
 	case "checking", "/checking", "ch", "/ch":
 		return checking
-
-	case "active", "/active", "ac", "/ac":
-		return active
 
 	case "errors", "/errors", "er", "/er":
 		return errors

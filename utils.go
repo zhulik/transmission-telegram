@@ -4,6 +4,7 @@ import (
 	"github.com/pyed/transmission"
 	"gopkg.in/telegram-bot-api.v4"
 	"strings"
+	"unicode/utf8"
 )
 
 type UpdateWrapper struct {
@@ -28,3 +29,10 @@ func (w UpdateWrapper) Tokens() []string {
 }
 
 type CommandHandler func(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper)
+
+func ellipsisString(str string, length int) string {
+	if utf8.RuneCountInString(str) > length {
+		return string([]rune(str)[:length-3]) + "..."
+	}
+	return str
+}
