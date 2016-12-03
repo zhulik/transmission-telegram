@@ -7,6 +7,7 @@ import (
 	"gopkg.in/telegram-bot-api.v4"
 	"log"
 	"os"
+	"runtime/debug"
 	"strings"
 	"time"
 )
@@ -172,7 +173,7 @@ func main() {
 		}
 
 		// tokenize the update
-		wrapper := UpdateWrapper(update)
+		wrapper := WrapUpdate(update)
 
 		// ignore anyone other than 'master'
 		if strings.ToLower(update.Message.From.UserName) != strings.ToLower(masterUsername) {
@@ -184,6 +185,7 @@ func main() {
 			defer func() {
 				if recover() != nil {
 					send(bot, "PANIC: something goes wrong...", wrapper.Message.Chat.ID, true)
+					log.Println(string(debug.Stack()))
 				}
 			}()
 			findHandler(wrapper.Command())(bot, client, wrapper)

@@ -6,14 +6,25 @@ import (
 	"strings"
 )
 
-type UpdateWrapper tgbotapi.Update
+type UpdateWrapper struct {
+	tgbotapi.Update
+	command string
+	tokens  []string
+}
+
+func WrapUpdate(update tgbotapi.Update) UpdateWrapper {
+	tokens := strings.Split(update.Message.Text, " ")
+	command := tokens[0]
+	args := tokens[1:]
+	return UpdateWrapper{update, command, args}
+}
 
 func (w UpdateWrapper) Command() string {
-	return strings.ToLower(w.Tokens()[0])
+	return w.command
 }
 
 func (w UpdateWrapper) Tokens() []string {
-	return strings.Split(w.Message.Text, " ")
+	return w.tokens
 }
 
 type CommandHandler func(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper)
