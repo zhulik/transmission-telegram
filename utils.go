@@ -1,8 +1,11 @@
 package main
 
 import (
+	"bytes"
+	"fmt"
 	"github.com/pyed/transmission"
 	"gopkg.in/telegram-bot-api.v4"
+	"log"
 	"strings"
 	"unicode/utf8"
 )
@@ -36,6 +39,66 @@ func ellipsisString(str string, length int) string {
 		return string([]rune(str)[:length-3]) + "..."
 	}
 	return str
+}
+
+// send takes a chat id and a message to send, returns the message id of the send message
+func send(bot *tgbotapi.BotAPI, text string, chatID int64, markdown bool) int {
+	// set typing action
+	action := tgbotapi.NewChatAction(chatID, tgbotapi.ChatTyping)
+	bot.Send(action)
+
+	// check the rune count, telegram is limited to 4096 chars per message;
+	// so if our message is > 4096, split it in chunks the send them.
+	msgRuneCount := utf8.RuneCountInString(text)
+LenCheck:
+	stop := 4095
+	if msgRuneCount > 4096 {
+		for text[stop] != 10 { // '\n'
+			stop--
+		}
+		msg := tgbotapi.NewMessage(chatID, text[:stop])
+		msg.DisableWebPagePreview = true
+		if markdown {
+			msg.ParseMode = tgbotapi.ModeMarkdown
+		}
+
+		// send current chunk
+		if _, err := bot.Send(msg); err != nil {
+			log.Printf("[ERROR] Send: %s", err)
+		}
+		// move to the next chunk
+		text = text[stop:]
+		msgRuneCount = utf8.RuneCountInString(text)
+		goto LenCheck
+	}
+
+	// if msgRuneCount < 4096, send it normally
+	msg := tgbotapi.NewMessage(chatID, text)
+	msg.DisableWebPagePreview = true
+	if markdown {
+		msg.ParseMode = tgbotapi.ModeMarkdown
+	}
+
+	resp, err := bot.Send(msg)
+	if err != nil {
+		log.Printf("[ERROR] Send: %s", err)
+	}
+
+	return resp.MessageID
+}
+
+func sendTorrents(bot *tgbotapi.BotAPI, ud UpdateWrapper, torrents transmission.Torrents) {
+	buf := new(bytes.Buffer)
+	for _, torrent := range torrents {
+		buf.WriteString(fmt.Sprintf("*%d* `%s` _%s_\n", torrent.ID, ellipsisString(torrent.Name, 25), torrent.TorrentStatus()))
+	}
+
+	if buf.Len() == 0 {
+		send(bot, "No torrents", ud.Message.Chat.ID, false)
+		return
+	}
+
+	send(bot, buf.String(), ud.Message.Chat.ID, true)
 }
 
 func sendFilteredTorrets(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper, filter TorrentFilter) {

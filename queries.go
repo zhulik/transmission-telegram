@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"github.com/dustin/go-humanize"
 	"github.com/pyed/transmission"
@@ -10,6 +9,10 @@ import (
 	"strconv"
 	"strings"
 	"time"
+)
+
+var (
+	trackerRegex = regexp.MustCompile(`[https?|udp]://([^:/]*)`)
 )
 
 // list will form and send a list of all the torrents
@@ -76,135 +79,6 @@ func search(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud Up
 	})
 }
 
-// sort changes torrents sorting
-func sort(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
-	if len(ud.Tokens()) == 0 {
-		send(bot, `sort takes one of:
-			(*id, name, age, size, progress, downspeed, upspeed, download, upload, ratio*)
-			optionally start with (*rev*) for reversed order
-			e.g. "*sort rev size*" to get biggest torrents first.`, ud.Message.Chat.ID, true)
-		return
-	}
-
-	var reversed bool
-	tokens := ud.Tokens()
-	if strings.ToLower(ud.Tokens()[0]) == "rev" {
-		reversed = true
-		tokens = ud.Tokens()[1:]
-	}
-
-	switch strings.ToLower(tokens[0]) {
-	case "id":
-		if reversed {
-			client.SetSort(transmission.SortRevID)
-			break
-		}
-		client.SetSort(transmission.SortID)
-	case "name":
-		if reversed {
-			client.SetSort(transmission.SortRevName)
-			break
-		}
-		client.SetSort(transmission.SortName)
-	case "age":
-		if reversed {
-			client.SetSort(transmission.SortRevAge)
-			break
-		}
-		client.SetSort(transmission.SortAge)
-	case "size":
-		if reversed {
-			client.SetSort(transmission.SortRevSize)
-			break
-		}
-		client.SetSort(transmission.SortSize)
-	case "progress":
-		if reversed {
-			client.SetSort(transmission.SortRevProgress)
-			break
-		}
-		client.SetSort(transmission.SortProgress)
-	case "downspeed":
-		if reversed {
-			client.SetSort(transmission.SortRevDownSpeed)
-			break
-		}
-		client.SetSort(transmission.SortDownSpeed)
-	case "upspeed":
-		if reversed {
-			client.SetSort(transmission.SortRevUpSpeed)
-			break
-		}
-		client.SetSort(transmission.SortUpSpeed)
-	case "download":
-		if reversed {
-			client.SetSort(transmission.SortRevDownloaded)
-			break
-		}
-		client.SetSort(transmission.SortDownloaded)
-	case "upload":
-		if reversed {
-			client.SetSort(transmission.SortRevUploaded)
-			break
-		}
-		client.SetSort(transmission.SortUploaded)
-	case "ratio":
-		if reversed {
-			client.SetSort(transmission.SortRevRatio)
-			break
-		}
-		client.SetSort(transmission.SortRatio)
-	default:
-		send(bot, "unkown sorting method", ud.Message.Chat.ID, false)
-		return
-	}
-
-	if reversed {
-		send(bot, "sort: reversed "+tokens[0], ud.Message.Chat.ID, false)
-		return
-	}
-	send(bot, "sort: "+tokens[0], ud.Message.Chat.ID, false)
-}
-
-var trackerRegex = regexp.MustCompile(`[https?|udp]://([^:/]*)`)
-
-// trackers will send a list of trackers and how many torrents each one has
-func trackers(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
-	torrents, err := client.GetTorrents()
-	if err != nil {
-		send(bot, "trackers: "+err.Error(), ud.Message.Chat.ID, false)
-		return
-	}
-
-	trackers := make(map[string]int)
-
-	for i := range torrents {
-		for _, tracker := range torrents[i].Trackers {
-			sm := trackerRegex.FindSubmatch([]byte(tracker.Announce))
-			if len(sm) > 1 {
-				currentTracker := string(sm[1])
-				n, ok := trackers[currentTracker]
-				if !ok {
-					trackers[currentTracker] = 1
-					continue
-				}
-				trackers[currentTracker] = n + 1
-			}
-		}
-	}
-
-	buf := new(bytes.Buffer)
-	for k, v := range trackers {
-		buf.WriteString(fmt.Sprintf("%d - %s\n", v, k))
-	}
-
-	if buf.Len() == 0 {
-		send(bot, "No trackers!", ud.Message.Chat.ID, false)
-		return
-	}
-	send(bot, buf.String(), ud.Message.Chat.ID, false)
-}
-
 // count returns current torrents count per status
 func count(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
 	torrents, err := client.GetTorrents()
@@ -262,7 +136,6 @@ func info(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud Upda
 			continue
 		}
 
-		// get the trackers using 'trackerRegex'
 		var trackers string
 		for _, tracker := range torrent.Trackers {
 			sm := trackerRegex.FindSubmatch([]byte(tracker.Announce))

@@ -37,9 +37,6 @@ const (
 	*sort* or *so*
 	Manipulate the sorting of the aforementioned commands, Call it without arguments for more.
 
-	*trackers* or *tr*
-	Lists all the trackers along with the number of torrents.
-
 	*add* or *ad*
 	Takes one or many URLs or magnets to add them, You can send a .torrent file via Telegram to add it.
 
@@ -213,9 +210,6 @@ func findHandler(command string) CommandHandler {
 
 	case "sort", "/sort", "so", "/so":
 		return sort
-
-	case "trackers", "/trackers", "tr", "/tr":
-		return trackers
 
 	case "add", "/add", "ad", "/ad":
 		return add

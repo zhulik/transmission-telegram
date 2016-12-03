@@ -1,13 +1,11 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"github.com/pyed/transmission"
 	"gopkg.in/telegram-bot-api.v4"
-	"log"
 	"strconv"
-	"unicode/utf8"
+	"strings"
 )
 
 // receiveTorrent gets an update that potentially has a .torrent file to add
@@ -206,66 +204,6 @@ func version(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud U
 	send(bot, fmt.Sprintf("Transmission *%s*\nTransmission-telegram *%s*", client.Version(), VERSION), ud.Message.Chat.ID, true)
 }
 
-// send takes a chat id and a message to send, returns the message id of the send message
-func send(bot *tgbotapi.BotAPI, text string, chatID int64, markdown bool) int {
-	// set typing action
-	action := tgbotapi.NewChatAction(chatID, tgbotapi.ChatTyping)
-	bot.Send(action)
-
-	// check the rune count, telegram is limited to 4096 chars per message;
-	// so if our message is > 4096, split it in chunks the send them.
-	msgRuneCount := utf8.RuneCountInString(text)
-LenCheck:
-	stop := 4095
-	if msgRuneCount > 4096 {
-		for text[stop] != 10 { // '\n'
-			stop--
-		}
-		msg := tgbotapi.NewMessage(chatID, text[:stop])
-		msg.DisableWebPagePreview = true
-		if markdown {
-			msg.ParseMode = tgbotapi.ModeMarkdown
-		}
-
-		// send current chunk
-		if _, err := bot.Send(msg); err != nil {
-			log.Printf("[ERROR] Send: %s", err)
-		}
-		// move to the next chunk
-		text = text[stop:]
-		msgRuneCount = utf8.RuneCountInString(text)
-		goto LenCheck
-	}
-
-	// if msgRuneCount < 4096, send it normally
-	msg := tgbotapi.NewMessage(chatID, text)
-	msg.DisableWebPagePreview = true
-	if markdown {
-		msg.ParseMode = tgbotapi.ModeMarkdown
-	}
-
-	resp, err := bot.Send(msg)
-	if err != nil {
-		log.Printf("[ERROR] Send: %s", err)
-	}
-
-	return resp.MessageID
-}
-
-func sendTorrents(bot *tgbotapi.BotAPI, ud UpdateWrapper, torrents transmission.Torrents) {
-	buf := new(bytes.Buffer)
-	for _, torrent := range torrents {
-		buf.WriteString(fmt.Sprintf("*%d* `%s` _%s_\n", torrent.ID, ellipsisString(torrent.Name, 25), torrent.TorrentStatus()))
-	}
-
-	if buf.Len() == 0 {
-		send(bot, "No torrents", ud.Message.Chat.ID, false)
-		return
-	}
-
-	send(bot, buf.String(), ud.Message.Chat.ID, true)
-}
-
 // addTorrentsByURL adds torrent files or magnet links passed by rls
 func addTorrentsByURL(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper, urls []string) {
 	if len(urls) == 0 {
@@ -305,4 +243,94 @@ func help(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud Upda
 // unknownCommand sends message that command is unknown
 func unknownCommand(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
 	send(bot, "no such command, try /help", ud.Message.Chat.ID, false)
+}
+
+// sort changes torrents sorting
+func sort(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
+	if len(ud.Tokens()) == 0 {
+		send(bot, `sort takes one of:
+			(*id, name, age, size, progress, downspeed, upspeed, download, upload, ratio*)
+			optionally start with (*rev*) for reversed order
+			e.g. "*sort rev size*" to get biggest torrents first.`, ud.Message.Chat.ID, true)
+		return
+	}
+
+	var reversed bool
+	tokens := ud.Tokens()
+	if strings.ToLower(ud.Tokens()[0]) == "rev" {
+		reversed = true
+		tokens = ud.Tokens()[1:]
+	}
+
+	switch strings.ToLower(tokens[0]) {
+	case "id":
+		if reversed {
+			client.SetSort(transmission.SortRevID)
+			break
+		}
+		client.SetSort(transmission.SortID)
+	case "name":
+		if reversed {
+			client.SetSort(transmission.SortRevName)
+			break
+		}
+		client.SetSort(transmission.SortName)
+	case "age":
+		if reversed {
+			client.SetSort(transmission.SortRevAge)
+			break
+		}
+		client.SetSort(transmission.SortAge)
+	case "size":
+		if reversed {
+			client.SetSort(transmission.SortRevSize)
+			break
+		}
+		client.SetSort(transmission.SortSize)
+	case "progress":
+		if reversed {
+			client.SetSort(transmission.SortRevProgress)
+			break
+		}
+		client.SetSort(transmission.SortProgress)
+	case "downspeed":
+		if reversed {
+			client.SetSort(transmission.SortRevDownSpeed)
+			break
+		}
+		client.SetSort(transmission.SortDownSpeed)
+	case "upspeed":
+		if reversed {
+			client.SetSort(transmission.SortRevUpSpeed)
+			break
+		}
+		client.SetSort(transmission.SortUpSpeed)
+	case "download":
+		if reversed {
+			client.SetSort(transmission.SortRevDownloaded)
+			break
+		}
+		client.SetSort(transmission.SortDownloaded)
+	case "upload":
+		if reversed {
+			client.SetSort(transmission.SortRevUploaded)
+			break
+		}
+		client.SetSort(transmission.SortUploaded)
+	case "ratio":
+		if reversed {
+			client.SetSort(transmission.SortRevRatio)
+			break
+		}
+		client.SetSort(transmission.SortRatio)
+	default:
+		send(bot, "unkown sorting method", ud.Message.Chat.ID, false)
+		return
+	}
+
+	if reversed {
+		send(bot, "sort: reversed "+tokens[0], ud.Message.Chat.ID, false)
+		return
+	}
+	send(bot, "sort: "+tokens[0], ud.Message.Chat.ID, false)
 }
