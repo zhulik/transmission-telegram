@@ -10,6 +10,39 @@ import (
 	"unicode/utf8"
 )
 
+var (
+	SortingMethods = map[SortMethod]transmission.Sorting{
+		SortMethod{"id", false}:       transmission.SortID,
+		SortMethod{"id", true}:        transmission.SortRevID,
+		SortMethod{"name", false}:     transmission.SortName,
+		SortMethod{"name", true}:      transmission.SortRevName,
+		SortMethod{"age", false}:      transmission.SortAge,
+		SortMethod{"age", true}:       transmission.SortRevAge,
+		SortMethod{"size", false}:     transmission.SortSize,
+		SortMethod{"size", true}:      transmission.SortRevSize,
+		SortMethod{"progress", false}: transmission.SortProgress,
+		SortMethod{"progress", true}:  transmission.SortRevProgress,
+		SortMethod{"downsped", false}: transmission.SortDownSpeed,
+		SortMethod{"downsped", true}:  transmission.SortRevDownSpeed,
+		SortMethod{"upspeed", false}:  transmission.SortUpSpeed,
+		SortMethod{"upspeed", true}:   transmission.SortRevUpSpeed,
+
+		SortMethod{"download", false}: transmission.SortDownloaded,
+		SortMethod{"download", true}:  transmission.SortRevDownloaded,
+
+		SortMethod{"upload", false}: transmission.SortUploaded,
+		SortMethod{"upload", true}:  transmission.SortRevUploaded,
+
+		SortMethod{"ratio", false}: transmission.SortRatio,
+		SortMethod{"ratio", true}:  transmission.SortRevRatio,
+	}
+)
+
+type SortMethod struct {
+	name     string
+	reversed bool
+}
+
 type UpdateWrapper struct {
 	tgbotapi.Update
 	command string

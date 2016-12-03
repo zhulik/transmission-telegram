@@ -262,75 +262,12 @@ func sort(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud Upda
 		tokens = ud.Tokens()[1:]
 	}
 
-	switch strings.ToLower(tokens[0]) {
-	case "id":
-		if reversed {
-			client.SetSort(transmission.SortRevID)
-			break
-		}
-		client.SetSort(transmission.SortID)
-	case "name":
-		if reversed {
-			client.SetSort(transmission.SortRevName)
-			break
-		}
-		client.SetSort(transmission.SortName)
-	case "age":
-		if reversed {
-			client.SetSort(transmission.SortRevAge)
-			break
-		}
-		client.SetSort(transmission.SortAge)
-	case "size":
-		if reversed {
-			client.SetSort(transmission.SortRevSize)
-			break
-		}
-		client.SetSort(transmission.SortSize)
-	case "progress":
-		if reversed {
-			client.SetSort(transmission.SortRevProgress)
-			break
-		}
-		client.SetSort(transmission.SortProgress)
-	case "downspeed":
-		if reversed {
-			client.SetSort(transmission.SortRevDownSpeed)
-			break
-		}
-		client.SetSort(transmission.SortDownSpeed)
-	case "upspeed":
-		if reversed {
-			client.SetSort(transmission.SortRevUpSpeed)
-			break
-		}
-		client.SetSort(transmission.SortUpSpeed)
-	case "download":
-		if reversed {
-			client.SetSort(transmission.SortRevDownloaded)
-			break
-		}
-		client.SetSort(transmission.SortDownloaded)
-	case "upload":
-		if reversed {
-			client.SetSort(transmission.SortRevUploaded)
-			break
-		}
-		client.SetSort(transmission.SortUploaded)
-	case "ratio":
-		if reversed {
-			client.SetSort(transmission.SortRevRatio)
-			break
-		}
-		client.SetSort(transmission.SortRatio)
-	default:
-		send(bot, "unkown sorting method", ud.Message.Chat.ID, false)
-		return
-	}
+	mode := SortMethod{strings.ToLower(tokens[0]), reversed}
 
-	if reversed {
-		send(bot, "sort: reversed "+tokens[0], ud.Message.Chat.ID, false)
-		return
+	if mode, ok := SortingMethods[mode]; ok {
+		client.SetSort(mode)
+		send(bot, fmt.Sprintf("sort: %s reversed: %t", tokens[0], reversed), ud.Message.Chat.ID, false)
+	} else {
+		send(bot, "unkown sorting method", ud.Message.Chat.ID, false)
 	}
-	send(bot, "sort: "+tokens[0], ud.Message.Chat.ID, false)
 }
