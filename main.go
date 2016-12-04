@@ -207,11 +207,8 @@ func findHandler(command string) CommandHandler {
 	case "count", "/count", "co", "/co":
 		return count
 
-	case "del", "/del":
-		return del
-
-	case "deldata", "/deldata":
-		return deldata
+	case "del", "/del", "deldata", "/deldata":
+		return delCommand
 
 	case "help", "/help":
 		return help

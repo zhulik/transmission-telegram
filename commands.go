@@ -17,6 +17,11 @@ var (
 		"check all": "VerifyAll",
 		"check":     "VerifyTorrent",
 	}
+
+	DelParams = map[string]bool{
+		"del":     false,
+		"deldata": true,
+	}
 )
 
 // receiveTorrent gets an update that potentially has a .torrent file to add
@@ -79,10 +84,10 @@ func mainCommand(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, 
 }
 
 // del takes an id or more, and delete the corresponding torrent/s
-func del(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
+func delCommand(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
 	// make sure that we got an argument
 	if len(ud.Tokens()) == 0 {
-		send(bot, "*del*: needs an ID", ud.Message.Chat.ID)
+		send(bot, fmt.Sprintf("*%s*: needs an ID", ud.Command()), ud.Message.Chat.ID)
 		return
 	}
 
@@ -90,42 +95,17 @@ func del(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud Updat
 	for _, id := range ud.Tokens() {
 		num, err := strconv.Atoi(id)
 		if err != nil {
-			send(bot, fmt.Sprintf("*del*: `%s` is not an ID", id), ud.Message.Chat.ID)
+			send(bot, fmt.Sprintf("*%s*: `%s` is not an ID", ud.Command(), id), ud.Message.Chat.ID)
 			return
 		}
 
-		name, err := client.DeleteTorrent(num, false)
+		name, err := client.DeleteTorrent(num, DelParams[ud.Command()])
 		if err != nil {
-			send(bot, fmt.Sprintf("*del*: `%s`", err.Error()), ud.Message.Chat.ID)
+			send(bot, fmt.Sprintf("*%s*: `%s`", ud.Command(), err.Error()), ud.Message.Chat.ID)
 			return
 		}
 
-		send(bot, fmt.Sprintf("*del*: `%s`", name), ud.Message.Chat.ID)
-	}
-}
-
-// deldata takes an id or more, and delete the corresponding torrent/s with their data
-func deldata(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper) {
-	// make sure that we got an argument
-	if len(ud.Tokens()) == 0 {
-		send(bot, "*deldata*: needs an ID", ud.Message.Chat.ID)
-		return
-	}
-	// loop over ud.Tokens() to read each potential id
-	for _, id := range ud.Tokens() {
-		num, err := strconv.Atoi(id)
-		if err != nil {
-			send(bot, fmt.Sprintf("*deldata*: `%s` is not an ID", id), ud.Message.Chat.ID)
-			return
-		}
-
-		name, err := client.DeleteTorrent(num, true)
-		if err != nil {
-			send(bot, fmt.Sprintf("*deldata*: `%s`", err.Error()), ud.Message.Chat.ID)
-			return
-		}
-
-		send(bot, fmt.Sprintf("*deldata*: Deleted with data: `%s`", name), ud.Message.Chat.ID)
+		send(bot, fmt.Sprintf("*%s*: `%s`", ud.Command(), name), ud.Message.Chat.ID)
 	}
 }
 
