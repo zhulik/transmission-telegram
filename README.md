@@ -11,6 +11,5 @@ Manage your transmission through Telegram.
 
 * Graphical progress
 * DRY similar commands
-* Maybe, change command names
 * Track msg updates, eg: update `del <id1>` to `del <id2>`
 * Multiple masters or password auth

@@ -44,28 +44,28 @@ type SortMethod struct {
 	reversed bool
 }
 
-type UpdateWrapper struct {
-	tgbotapi.Update
+type MessageWrapper struct {
+	*tgbotapi.Message
 	command string
 	tokens  []string
 }
 
-func WrapUpdate(update tgbotapi.Update) UpdateWrapper {
-	tokens := strings.Split(update.Message.Text, " ")
+func WrapMessage(message *tgbotapi.Message) MessageWrapper {
+	tokens := strings.Split(message.Text, " ")
 	command := strings.ToLower(tokens[0])
 	args := tokens[1:]
-	return UpdateWrapper{update, command, args}
+	return MessageWrapper{message, command, args}
 }
 
-func (w UpdateWrapper) Command() string {
+func (w MessageWrapper) Command() string {
 	return w.command
 }
 
-func (w UpdateWrapper) Tokens() []string {
+func (w MessageWrapper) Tokens() []string {
 	return w.tokens
 }
 
-type CommandHandler func(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper)
+type CommandHandler func(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud MessageWrapper)
 type TorrentFilter func(torrent *transmission.Torrent) bool
 
 func ellipsisString(str string, length int) string {
@@ -117,7 +117,7 @@ LenCheck:
 	return resp.MessageID
 }
 
-func sendTorrents(bot *tgbotapi.BotAPI, ud UpdateWrapper, torrents transmission.Torrents) {
+func sendTorrents(bot *tgbotapi.BotAPI, ud MessageWrapper, torrents transmission.Torrents) {
 	buf := new(bytes.Buffer)
 	for _, torrent := range torrents {
 		buf.WriteString(fmt.Sprintf("*%d* `%s` _%s_\n", torrent.ID, ellipsisString(torrent.Name, 25), torrent.TorrentStatus()))
@@ -131,7 +131,7 @@ func sendTorrents(bot *tgbotapi.BotAPI, ud UpdateWrapper, torrents transmission.
 	send(bot, buf.String(), ud.Message.Chat.ID)
 }
 
-func sendFilteredTorrets(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud UpdateWrapper, filter TorrentFilter) {
+func sendFilteredTorrets(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud MessageWrapper, filter TorrentFilter) {
 	torrents, err := client.GetTorrents()
 	if err != nil {
 		send(bot, "Torrents obtain error: "+err.Error(), ud.Message.Chat.ID)

@@ -9,7 +9,6 @@ import (
 	"os"
 	"runtime/debug"
 	"strings"
-	"time"
 )
 
 const (
@@ -69,9 +68,6 @@ const (
 	- Prefix commands with '/' if you want to talk to your bot in a group.
 	- report any issues [here](https://github.com/pyed/transmission-telegram)
 	`
-
-	duration               = 60
-	interval time.Duration = 2
 )
 
 func main() {
@@ -146,18 +142,22 @@ func main() {
 
 	updates, err := bot.GetUpdatesChan(u)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "[ERROR] Telegram: %s", err)
+		log.Printf("[ERROR] Telegram: %s", err)
 		os.Exit(1)
 	}
 
 	for update := range updates {
-		// ignore edited messages
+		var wrapper MessageWrapper
 		if update.Message == nil {
-			continue
+			if update.UpdateID > 0 {
+				log.Println(update.EditedMessage.Text)
+				wrapper = WrapMessage(update.EditedMessage)
+			} else {
+				continue
+			}
+		} else {
+			wrapper = WrapMessage(update.Message)
 		}
-
-		// tokenize the update
-		wrapper := WrapUpdate(update)
 
 		// ignore anyone other than 'master'
 		if strings.ToLower(update.Message.From.UserName) != strings.ToLower(masterUsername) {
