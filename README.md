@@ -10,6 +10,4 @@ Manage your transmission through Telegram.
 ## Todo
 
 * Graphical progress
-* DRY similar commands
-* Track msg updates, eg: update `del <id1>` to `del <id2>`
 * Multiple masters or password auth

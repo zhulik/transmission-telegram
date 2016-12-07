@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"github.com/dustin/go-humanize"
-	"github.com/pyed/transmission"
 	"gopkg.in/telegram-bot-api.v4"
 	"strconv"
 	"time"
@@ -15,7 +14,7 @@ const (
 )
 
 // info takes an id of a torrent and returns some info about it
-func info(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud MessageWrapper) {
+func info(bot *tgbotapi.BotAPI, client TransmissionClient, ud MessageWrapper) {
 	if len(ud.Tokens()) == 0 {
 		send(bot, "*info*: needs a torrent ID number", ud.Chat.ID)
 		return
@@ -37,7 +36,7 @@ func info(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud Mess
 	}
 }
 
-func updateTorrentInfo(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud MessageWrapper, torrentID int) {
+func updateTorrentInfo(bot *tgbotapi.BotAPI, client TransmissionClient, ud MessageWrapper, torrentID int) {
 	msgID := -1
 	for i := 0; i < duration; i++ {
 		torrent, err := client.GetTorrent(torrentID)
@@ -81,7 +80,7 @@ func updateTorrentInfo(bot *tgbotapi.BotAPI, client *transmission.TransmissionCl
 }
 
 // speed will echo back the current download and upload speeds
-func speed(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud MessageWrapper) {
+func speed(bot *tgbotapi.BotAPI, client TransmissionClient, ud MessageWrapper) {
 	// keep track of the returned message ID from 'send()' to edit the message.
 	msgID := -1
 	for i := 0; i < duration; i++ {

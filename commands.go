@@ -25,7 +25,7 @@ var (
 )
 
 // receiveTorrent gets an update that potentially has a .torrent file to add
-func receiveTorrent(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud MessageWrapper) {
+func receiveTorrent(bot *tgbotapi.BotAPI, client TransmissionClient, ud MessageWrapper) {
 	if ud.Document.FileID == "" {
 		return // has no document
 	}
@@ -45,7 +45,7 @@ func receiveTorrent(bot *tgbotapi.BotAPI, client *transmission.TransmissionClien
 }
 
 // stop takes id[s] of torrent[s] or 'all' to stop them
-func mainCommand(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud MessageWrapper) {
+func mainCommand(bot *tgbotapi.BotAPI, client TransmissionClient, ud MessageWrapper) {
 	// make sure that we got at least one argument
 	if len(ud.Tokens()) == 0 {
 		send(bot, fmt.Sprintf("*%s*: needs an argument", ud.Command()), ud.Chat.ID)
@@ -84,7 +84,7 @@ func mainCommand(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, 
 }
 
 // del takes an id or more, and delete the corresponding torrent/s
-func delCommand(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud MessageWrapper) {
+func delCommand(bot *tgbotapi.BotAPI, client TransmissionClient, ud MessageWrapper) {
 	// make sure that we got an argument
 	if len(ud.Tokens()) == 0 {
 		send(bot, fmt.Sprintf("*%s*: needs an ID", ud.Command()), ud.Chat.ID)
@@ -110,12 +110,12 @@ func delCommand(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, u
 }
 
 // version sends transmission version + transmission-telegram version
-func version(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud MessageWrapper) {
+func version(bot *tgbotapi.BotAPI, client TransmissionClient, ud MessageWrapper) {
 	send(bot, fmt.Sprintf("Transmission *%s*\nTransmission-telegram *%s*", client.Version(), VERSION), ud.Chat.ID)
 }
 
 // addTorrentsByURL adds torrent files or magnet links passed by rls
-func addTorrentsByURL(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud MessageWrapper, urls []string) {
+func addTorrentsByURL(bot *tgbotapi.BotAPI, client TransmissionClient, ud MessageWrapper, urls []string) {
 	if len(urls) == 0 {
 		send(bot, "*add*: needs atleast one URL", ud.Chat.ID)
 		return
@@ -141,22 +141,22 @@ func addTorrentsByURL(bot *tgbotapi.BotAPI, client *transmission.TransmissionCli
 }
 
 // add takes an URL to a .torrent file in message to add it to transmission
-func add(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud MessageWrapper) {
+func add(bot *tgbotapi.BotAPI, client TransmissionClient, ud MessageWrapper) {
 	addTorrentsByURL(bot, client, ud, ud.Tokens())
 }
 
 // help sends help messsage
-func help(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud MessageWrapper) {
+func help(bot *tgbotapi.BotAPI, client TransmissionClient, ud MessageWrapper) {
 	send(bot, HELP, ud.Chat.ID)
 }
 
 // unknownCommand sends message that command is unknown
-func unknownCommand(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud MessageWrapper) {
+func unknownCommand(bot *tgbotapi.BotAPI, client TransmissionClient, ud MessageWrapper) {
 	send(bot, "no such command, try /help", ud.Chat.ID)
 }
 
 // sort changes torrents sorting
-func sort(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud MessageWrapper) {
+func sort(bot *tgbotapi.BotAPI, client TransmissionClient, ud MessageWrapper) {
 	if len(ud.Tokens()) == 0 {
 		send(bot, `sort takes one of:
 			(*id, name, age, size, progress, downspeed, upspeed, download, upload, ratio*)
