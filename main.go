@@ -165,14 +165,16 @@ func main() {
 			continue
 		}
 
+		b := &TransmissionClientWrapper{bot: bot}
+
 		go func() {
 			defer func() {
 				if recover() != nil {
-					send(bot, "PANIC: something goes wrong...", wrapper.Message.Chat.ID)
+					send(b, "PANIC: something goes wrong...", wrapper.Message.Chat.ID)
 					log.Println(string(debug.Stack()))
 				}
 			}()
-			findHandler(wrapper.Command())(bot, client, wrapper)
+			findHandler(wrapper.Command())(b, client, wrapper)
 		}()
 
 	}

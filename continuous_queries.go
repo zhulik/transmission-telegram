@@ -14,7 +14,7 @@ const (
 )
 
 // info takes an id of a torrent and returns some info about it
-func info(bot *tgbotapi.BotAPI, client TransmissionClient, ud MessageWrapper) {
+func info(bot TelegramClient, client TransmissionClient, ud MessageWrapper) {
 	if len(ud.Tokens()) == 0 {
 		send(bot, "*info*: needs a torrent ID number", ud.Chat.ID)
 		return
@@ -36,7 +36,7 @@ func info(bot *tgbotapi.BotAPI, client TransmissionClient, ud MessageWrapper) {
 	}
 }
 
-func updateTorrentInfo(bot *tgbotapi.BotAPI, client TransmissionClient, ud MessageWrapper, torrentID int) {
+func updateTorrentInfo(bot TelegramClient, client TransmissionClient, ud MessageWrapper, torrentID int) {
 	msgID := -1
 	for i := 0; i < duration; i++ {
 		torrent, err := client.GetTorrent(torrentID)
@@ -80,7 +80,7 @@ func updateTorrentInfo(bot *tgbotapi.BotAPI, client TransmissionClient, ud Messa
 }
 
 // speed will echo back the current download and upload speeds
-func speed(bot *tgbotapi.BotAPI, client TransmissionClient, ud MessageWrapper) {
+func speed(bot TelegramClient, client TransmissionClient, ud MessageWrapper) {
 	// keep track of the returned message ID from 'send()' to edit the message.
 	msgID := -1
 	for i := 0; i < duration; i++ {

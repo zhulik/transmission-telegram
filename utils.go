@@ -65,7 +65,7 @@ func (w MessageWrapper) Tokens() []string {
 	return w.tokens
 }
 
-type CommandHandler func(bot *tgbotapi.BotAPI, client TransmissionClient, ud MessageWrapper)
+type CommandHandler func(bot TelegramClient, client TransmissionClient, ud MessageWrapper)
 type TorrentFilter func(torrent *transmission.Torrent) bool
 
 func ellipsisString(str string, length int) string {
@@ -76,7 +76,7 @@ func ellipsisString(str string, length int) string {
 }
 
 // send takes a chat id and a message to send, returns the message id of the send message
-func send(bot *tgbotapi.BotAPI, text string, chatID int64) int {
+func send(bot TelegramClient, text string, chatID int64) int {
 	// set typing action
 	action := tgbotapi.NewChatAction(chatID, tgbotapi.ChatTyping)
 	bot.Send(action)
@@ -117,7 +117,7 @@ LenCheck:
 	return resp.MessageID
 }
 
-func sendTorrents(bot *tgbotapi.BotAPI, ud MessageWrapper, torrents transmission.Torrents) {
+func sendTorrents(bot TelegramClient, ud MessageWrapper, torrents transmission.Torrents) {
 	buf := new(bytes.Buffer)
 	for _, torrent := range torrents {
 		buf.WriteString(fmt.Sprintf("*%d* `%s` _%s_\n", torrent.ID, ellipsisString(torrent.Name, 25), torrent.TorrentStatus()))
@@ -131,7 +131,7 @@ func sendTorrents(bot *tgbotapi.BotAPI, ud MessageWrapper, torrents transmission
 	send(bot, buf.String(), ud.Message.Chat.ID)
 }
 
-func sendFilteredTorrets(bot *tgbotapi.BotAPI, client TransmissionClient, ud MessageWrapper, filter TorrentFilter) {
+func sendFilteredTorrets(bot TelegramClient, client TransmissionClient, ud MessageWrapper, filter TorrentFilter) {
 	torrents, err := client.GetTorrents()
 	if err != nil {
 		send(bot, "Torrents obtain error: "+err.Error(), ud.Message.Chat.ID)
