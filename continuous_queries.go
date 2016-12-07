@@ -13,7 +13,7 @@ const (
 	interval time.Duration = 2
 )
 
-func updateTorrentInfo(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud MessageWrapper, trackers string, torrentID int) {
+func updateTorrentInfo(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud MessageWrapper, torrentID int) {
 	msgID := -1
 	for i := 0; i < duration; i++ {
 		torrent, err := client.GetTorrent(torrentID)
@@ -21,11 +21,11 @@ func updateTorrentInfo(bot *tgbotapi.BotAPI, client *transmission.TransmissionCl
 			continue // skip this iteration if there's an error retrieving the torrent's info
 		}
 
-		info := fmt.Sprintf("*%d* `%s`\n%s *%s* of *%s* (*%.1f%%*) ↓ *%s*  ↑ *%s* R: *%s*\nDL: *%s* UP: *%s*\nAdded: *%s*, ETA: *%s*\nTrackers: `%s`",
+		info := fmt.Sprintf("*%d* `%s`\n%s *%s* of *%s* (*%.1f%%*) ↓ *%s*  ↑ *%s* R: *%s*\nDL: *%s* UP: *%s*\nAdded: *%s*, ETA: *%s*",
 			torrent.ID, torrent.Name, torrent.TorrentStatus(), humanize.Bytes(torrent.Have()), humanize.Bytes(torrent.SizeWhenDone),
 			torrent.PercentDone*100, humanize.Bytes(torrent.RateDownload), humanize.Bytes(torrent.RateUpload), torrent.Ratio(),
 			humanize.Bytes(torrent.DownloadedEver), humanize.Bytes(torrent.UploadedEver), time.Unix(torrent.AddedDate, 0).Format(time.Stamp),
-			torrent.ETA(), trackers)
+			torrent.ETA())
 
 		// update the message
 		if msgID == -1 {
@@ -46,10 +46,10 @@ func updateTorrentInfo(bot *tgbotapi.BotAPI, client *transmission.TransmissionCl
 	}
 
 	// at the end write dashes to indicate that we are done being live.
-	info := fmt.Sprintf("*%d* `%s`\n%s *%s* of *%s* (*%.1f%%*) ↓ *- B*  ↑ *- B* R: *%s*\nDL: *%s* UP: *%s*\nAdded: *%s*, ETA: *-*\nTrackers: `%s`",
+	info := fmt.Sprintf("*%d* `%s`\n%s *%s* of *%s* (*%.1f%%*) ↓ *- B*  ↑ *- B* R: *%s*\nDL: *%s* UP: *%s*\nAdded: *%s*, ETA: *-*\n",
 		torrent.ID, torrent.Name, torrent.TorrentStatus(), humanize.Bytes(torrent.Have()), humanize.Bytes(torrent.SizeWhenDone),
 		torrent.PercentDone*100, torrent.Ratio(), humanize.Bytes(torrent.DownloadedEver), humanize.Bytes(torrent.UploadedEver),
-		time.Unix(torrent.AddedDate, 0).Format(time.Stamp), trackers)
+		time.Unix(torrent.AddedDate, 0).Format(time.Stamp))
 
 	editConf := tgbotapi.NewEditMessageText(ud.Message.Chat.ID, msgID, info)
 	editConf.ParseMode = tgbotapi.ModeMarkdown

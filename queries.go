@@ -144,20 +144,12 @@ func info(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud Mess
 			continue
 		}
 
-		torrent, err := client.GetTorrent(torrentID)
+		_, err = client.GetTorrent(torrentID)
 		if err != nil {
 			send(bot, fmt.Sprintf("*info*: Can't find a torrent with an ID of %d", torrentID), ud.Chat.ID)
 			continue
 		}
-
-		var trackers string
-		for _, tracker := range torrent.Trackers {
-			sm := trackerRegex.FindSubmatch([]byte(tracker.Announce))
-			if len(sm) > 1 {
-				trackers += string(sm[1]) + " "
-			}
-		}
-		go updateTorrentInfo(bot, client, ud, trackers, torrentID)
+		go updateTorrentInfo(bot, client, ud, torrentID)
 	}
 }
 
