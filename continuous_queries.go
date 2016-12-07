@@ -5,6 +5,7 @@ import (
 	"github.com/dustin/go-humanize"
 	"github.com/pyed/transmission"
 	"gopkg.in/telegram-bot-api.v4"
+	"strconv"
 	"time"
 )
 
@@ -12,6 +13,29 @@ const (
 	duration               = 60
 	interval time.Duration = 2
 )
+
+// info takes an id of a torrent and returns some info about it
+func info(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud MessageWrapper) {
+	if len(ud.Tokens()) == 0 {
+		send(bot, "*info*: needs a torrent ID number", ud.Chat.ID)
+		return
+	}
+
+	for _, id := range ud.Tokens() {
+		torrentID, err := strconv.Atoi(id)
+		if err != nil {
+			send(bot, fmt.Sprintf("*info*: %s is not a number", id), ud.Chat.ID)
+			continue
+		}
+
+		_, err = client.GetTorrent(torrentID)
+		if err != nil {
+			send(bot, fmt.Sprintf("*info*: Can't find a torrent with an ID of %d", torrentID), ud.Chat.ID)
+			continue
+		}
+		go updateTorrentInfo(bot, client, ud, torrentID)
+	}
+}
 
 func updateTorrentInfo(bot *tgbotapi.BotAPI, client *transmission.TransmissionClient, ud MessageWrapper, torrentID int) {
 	msgID := -1
