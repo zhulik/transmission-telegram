@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"runtime/debug"
+	"sort"
 	"strings"
 )
 
@@ -72,14 +73,14 @@ const (
 
 func main() {
 	var botToken string
-	var masterUsername string
+	var masterUsernames string
 	var transmissionURL string
 	var transmissionUsername string
 	var transmissionPassword string
 	var logFile string
 
 	flag.StringVar(&botToken, "token", "", "Telegram bot token")
-	flag.StringVar(&masterUsername, "master", "", "Your telegram handler, So the bot will only respond to you")
+	flag.StringVar(&masterUsernames, "masters", "", "Your telegram handlers, separated with comma, so the bot will only respond to them")
 	flag.StringVar(&transmissionURL, "url", "http://localhost:9091/transmission/rpc", "Transmission RPC URL")
 	flag.StringVar(&transmissionUsername, "username", "", "Transmission username")
 	flag.StringVar(&transmissionPassword, "password", "", "Transmission password")
@@ -94,15 +95,17 @@ func main() {
 	flag.Parse()
 
 	// make sure that we have the two madatory arguments: telegram token & master's handler.
-	if botToken == "" ||
-		masterUsername == "" {
-		fmt.Fprintf(os.Stderr, "Error: Mandatory argument missing! (-token or -master)\n\n")
+	if botToken == "" || masterUsernames == "" {
+		fmt.Fprintf(os.Stderr, "Error: Mandatory argument missing! (-token or -masters)\n\n")
 		flag.Usage()
 		os.Exit(1)
 	}
 
 	// make sure that the handler doesn't contain @
-	masterUsername = strings.Replace(masterUsername, "@", "", -1)
+	masterUsernames = strings.ToLower(strings.Replace(masterUsernames, "@", "", -1))
+
+	masters := strings.Split(masterUsernames, ",")
+	sort.Strings(masters)
 
 	// if we got a log file, log to it
 	if logFile != "" {
@@ -121,8 +124,8 @@ func main() {
 	}
 
 	// log the flags
-	log.Printf("[INFO] Token=%s\nMaster=%s\nURL=%s\nUSER=%s\nPASS=%s",
-		botToken, masterUsername, transmissionURL, transmissionUsername, transmissionPassword)
+	log.Printf("[INFO] Token=%s\nMasters=%s\nURL=%s\nUSER=%s\nPASS=%s",
+		botToken, masterUsernames, transmissionURL, transmissionUsername, transmissionPassword)
 
 	client, err := transmission.New(transmissionURL, transmissionUsername, transmissionPassword)
 	if err != nil {
@@ -159,8 +162,8 @@ func main() {
 			wrapper = WrapMessage(update.Message)
 		}
 
-		// ignore anyone other than 'master'
-		if strings.ToLower(update.Message.From.UserName) != strings.ToLower(masterUsername) {
+		// ignore anyone other than 'masters'
+		if sort.SearchStrings(masters, strings.ToLower(update.Message.From.UserName)) == len(masters) {
 			log.Printf("[INFO] Ignored a message from: %s", wrapper.Message.From.String())
 			continue
 		}
@@ -186,7 +189,7 @@ func findHandler(command string) CommandHandler {
 		return list
 
 	case "sort", "/sort", "so", "/so":
-		return sort
+		return sortComand
 
 	case "add", "/add", "ad", "/ad":
 		return add

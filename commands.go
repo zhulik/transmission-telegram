@@ -156,7 +156,7 @@ func unknownCommand(bot TelegramClient, client TransmissionClient, ud MessageWra
 }
 
 // sort changes torrents sorting
-func sort(bot TelegramClient, client TransmissionClient, ud MessageWrapper) {
+func sortComand(bot TelegramClient, client TransmissionClient, ud MessageWrapper) {
 	if len(ud.Tokens()) == 0 {
 		send(bot, `sort takes one of:
 			(*id, name, age, size, progress, downspeed, upspeed, download, upload, ratio*)
