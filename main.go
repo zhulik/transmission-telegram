@@ -154,7 +154,6 @@ func main() {
 	}
 
 	b := &TelegramClientWrapper{bot: bot}
-	// go notifyFinished(b, client, masters)
 
 	usr, err := user.Current()
 	if err != nil {
@@ -174,11 +173,12 @@ func main() {
 		os.Exit(1)
 	}
 
+	go notifyFinished(b, client, masters, s)
+
 	for update := range updates {
 		var wrapper MessageWrapper
 		if update.Message == nil {
 			if update.UpdateID > 0 {
-				log.Println(update.EditedMessage.Text)
 				wrapper = WrapMessage(update.EditedMessage)
 			} else {
 				continue
@@ -188,10 +188,12 @@ func main() {
 		}
 
 		// ignore anyone other than 'masters'
-		if sort.SearchStrings(masters, strings.ToLower(wrapper.From.UserName)) == len(masters) {
+		if sort.SearchStrings(masters, strings.ToLower(wrapper.Chat.UserName)) == len(masters) {
 			log.Printf("[INFO] Ignored a message from: %s", wrapper.Message.From.String())
 			continue
 		}
+
+		s.SetUserID(wrapper.Chat.UserName, wrapper.Chat.ID)
 
 		go func() {
 			defer func() {
@@ -238,11 +240,11 @@ func findHandler(command string) CommandHandler {
 	case "count", "/count", "co", "/co":
 		return count
 
+	case "notifications", "/notifications", "ns", "/ns":
+		return notifications
+
 	case "del", "/del", "deldata", "/deldata":
 		return delCommand
-
-	case "notify":
-		return notifyFinished
 
 	case "help", "/help":
 		return help
