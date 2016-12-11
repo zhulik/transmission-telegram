@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/dustin/go-humanize"
+	"github.com/pyed/transmission"
 	"gopkg.in/telegram-bot-api.v4"
 	"strconv"
 	"time"
@@ -52,11 +54,11 @@ func updateTorrentInfo(bot TelegramClient, client TransmissionClient, ud Message
 
 		// update the message
 		if msgID == -1 {
-			msgID = send(bot, info, ud.Message.Chat.ID)
+			msgID = send(bot, info, ud.Chat.ID)
 			time.Sleep(time.Second * interval)
 			continue
 		} else {
-			editConf := tgbotapi.NewEditMessageText(ud.Message.Chat.ID, msgID, info)
+			editConf := tgbotapi.NewEditMessageText(ud.Chat.ID, msgID, info)
 			editConf.ParseMode = tgbotapi.ModeMarkdown
 			bot.Send(editConf)
 		}
@@ -74,7 +76,7 @@ func updateTorrentInfo(bot TelegramClient, client TransmissionClient, ud Message
 		torrent.PercentDone*100, torrent.Ratio(), humanize.Bytes(torrent.DownloadedEver), humanize.Bytes(torrent.UploadedEver),
 		time.Unix(torrent.AddedDate, 0).Format(time.Stamp))
 
-	editConf := tgbotapi.NewEditMessageText(ud.Message.Chat.ID, msgID, info)
+	editConf := tgbotapi.NewEditMessageText(ud.Chat.ID, msgID, info)
 	editConf.ParseMode = tgbotapi.ModeMarkdown
 	bot.Send(editConf)
 }
@@ -86,7 +88,7 @@ func speed(bot TelegramClient, client TransmissionClient, ud MessageWrapper) {
 	for i := 0; i < duration; i++ {
 		stats, err := client.GetStats()
 		if err != nil {
-			send(bot, fmt.Sprintf("*speed*: `%s`", err.Error()), ud.Message.Chat.ID)
+			send(bot, fmt.Sprintf("*speed*: `%s`", err.Error()), ud.Chat.ID)
 			return
 		}
 
@@ -94,18 +96,53 @@ func speed(bot TelegramClient, client TransmissionClient, ud MessageWrapper) {
 
 		// if we haven't send a message, send it and save the message ID to edit it the next iteration
 		if msgID == -1 {
-			msgID = send(bot, msg, ud.Message.Chat.ID)
+			msgID = send(bot, msg, ud.Chat.ID)
 			time.Sleep(time.Second * interval)
 			continue
 		}
 
 		// we have sent the message, let's update.
-		editConf := tgbotapi.NewEditMessageText(ud.Message.Chat.ID, msgID, msg)
+		editConf := tgbotapi.NewEditMessageText(ud.Chat.ID, msgID, msg)
 		bot.Send(editConf)
+		editConf.ParseMode = tgbotapi.ModeMarkdown
 		time.Sleep(time.Second * interval)
 	}
 
-	// after the 10th iteration, show dashes to indicate that we are done updating.
-	editConf := tgbotapi.NewEditMessageText(ud.Message.Chat.ID, msgID, "↓ - B  ↑ - B")
+	editConf := tgbotapi.NewEditMessageText(ud.Chat.ID, msgID, "↓ - B  ↑ - B")
+	editConf.ParseMode = tgbotapi.ModeMarkdown
 	bot.Send(editConf)
+}
+
+// progress echo bach progress and other info for downloading torrents
+func progress(bot TelegramClient, client TransmissionClient, ud MessageWrapper) {
+	msgID := -1
+	for i := 0; i < duration; i++ {
+		torrents, err := client.GetTorrents()
+		if err != nil {
+			send(bot, "Torrents obtain error: "+err.Error(), ud.Chat.ID)
+			continue
+		}
+
+		buf := new(bytes.Buffer)
+		for _, t := range torrents {
+			if t.Status == transmission.StatusDownloading {
+				buf.WriteString(fmt.Sprintf("*%d* `%s`\n%s %.1f%% %s ↓%s\n", t.ID, ellipsisString(t.Name, 30), progressString(t.PercentDone, 10), t.PercentDone*100, t.ETA(), humanize.Bytes(t.RateDownload)))
+			}
+		}
+
+		if buf.Len() == 0 {
+			send(bot, "No torrents", ud.Chat.ID)
+			return
+		}
+
+		if msgID == -1 {
+			msgID = send(bot, buf.String(), ud.Chat.ID)
+			continue
+		}
+
+		editConf := tgbotapi.NewEditMessageText(ud.Chat.ID, msgID, buf.String())
+		editConf.ParseMode = tgbotapi.ModeMarkdown
+		bot.Send(editConf)
+		time.Sleep(time.Second * interval)
+	}
 }

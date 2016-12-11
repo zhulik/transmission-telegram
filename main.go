@@ -163,7 +163,7 @@ func main() {
 		}
 
 		// ignore anyone other than 'masters'
-		if sort.SearchStrings(masters, strings.ToLower(update.Message.From.UserName)) == len(masters) {
+		if sort.SearchStrings(masters, strings.ToLower(wrapper.From.UserName)) == len(masters) {
 			log.Printf("[INFO] Ignored a message from: %s", wrapper.Message.From.String())
 			continue
 		}
@@ -205,6 +205,9 @@ func findHandler(command string) CommandHandler {
 
 	case "stats", "/stats", "sa", "/sa":
 		return stats
+
+	case "progress", "/progress", "pr", "/pr":
+		return progress
 
 	case "speed", "/speed", "ss", "/ss":
 		return speed

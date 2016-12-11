@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"github.com/dustin/go-humanize"
 	"github.com/pyed/transmission"
 	"gopkg.in/telegram-bot-api.v4"
 	"log"
@@ -172,4 +173,14 @@ func InvokeStatus(any interface{}, name string, args ...interface{}) (string, er
 		return status, err.(error)
 	}
 	return status, nil
+}
+
+func progressString(persentage float64, length int) string {
+	fill := int(persentage * float64(length))
+	empty := length - fill
+	return fmt.Sprintf("%s%s", strings.Repeat("█", fill), strings.Repeat("░", empty))
+}
+
+func progressBar(t *transmission.Torrent) string {
+	return fmt.Sprintf("%s %.1f%% %s ↓%s", progressString(t.PercentDone, 10), t.PercentDone, t.ETA(), humanize.Bytes(t.RateDownload))
 }

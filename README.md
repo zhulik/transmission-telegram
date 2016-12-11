@@ -9,5 +9,5 @@ Manage your transmission through Telegram.
 
 ## Todo
 
-* Graphical progress
+* Notifications
 * Multiple masters or password auth
