@@ -4,9 +4,12 @@ import (
 	"flag"
 	"fmt"
 	"github.com/pyed/transmission"
+	"github.com/zhulik/transmission-telegram/settings"
 	"gopkg.in/telegram-bot-api.v4"
 	"log"
 	"os"
+	"os/user"
+	"path"
 	"runtime/debug"
 	"sort"
 	"strings"
@@ -153,6 +156,24 @@ func main() {
 	b := &TelegramClientWrapper{bot: bot}
 	// go notifyFinished(b, client, masters)
 
+	usr, err := user.Current()
+	if err != nil {
+		log.Println(err)
+		os.Exit(1)
+	}
+
+	configPath := path.Join(usr.HomeDir, ".config", "transmission-telegram")
+	err = os.MkdirAll(configPath, 0755)
+	if err != nil {
+		log.Println(err)
+		os.Exit(1)
+	}
+	s, err := settings.GetSettings(path.Join(configPath, "settings.db"))
+	if err != nil {
+		log.Println(err)
+		os.Exit(1)
+	}
+
 	for update := range updates {
 		var wrapper MessageWrapper
 		if update.Message == nil {
@@ -179,7 +200,7 @@ func main() {
 					log.Println(string(debug.Stack()))
 				}
 			}()
-			findHandler(wrapper.Command())(b, client, wrapper)
+			findHandler(wrapper.Command())(b, client, wrapper, s)
 		}()
 
 	}
@@ -191,7 +212,7 @@ func findHandler(command string) CommandHandler {
 		return list
 
 	case "sort", "/sort", "so", "/so":
-		return sortComand
+		return sortCommand
 
 	case "add", "/add", "ad", "/ad":
 		return add

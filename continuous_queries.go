@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/dustin/go-humanize"
 	"github.com/pyed/transmission"
+	"github.com/zhulik/transmission-telegram/settings"
 	"gopkg.in/telegram-bot-api.v4"
 	"strconv"
 	"time"
@@ -16,7 +17,7 @@ const (
 )
 
 // info takes an id of a torrent and returns some info about it
-func info(bot TelegramClient, client TransmissionClient, ud MessageWrapper) {
+func info(bot TelegramClient, client TransmissionClient, ud MessageWrapper, s settings.Settings) {
 	if len(ud.Tokens()) == 0 {
 		send(bot, "*info*: needs a torrent ID number", ud.Chat.ID)
 		return
@@ -82,7 +83,7 @@ func updateTorrentInfo(bot TelegramClient, client TransmissionClient, ud Message
 }
 
 // speed will echo back the current download and upload speeds
-func speed(bot TelegramClient, client TransmissionClient, ud MessageWrapper) {
+func speed(bot TelegramClient, client TransmissionClient, ud MessageWrapper, s settings.Settings) {
 	// keep track of the returned message ID from 'send()' to edit the message.
 	msgID := -1
 	for i := 0; i < duration; i++ {
@@ -114,7 +115,7 @@ func speed(bot TelegramClient, client TransmissionClient, ud MessageWrapper) {
 }
 
 // progress echo bach progress and other info for downloading torrents
-func progress(bot TelegramClient, client TransmissionClient, ud MessageWrapper) {
+func progress(bot TelegramClient, client TransmissionClient, ud MessageWrapper, s settings.Settings) {
 	msgID := -1
 	for i := 0; i < duration; i++ {
 		torrents, err := client.GetTorrents()

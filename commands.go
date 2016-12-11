@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/pyed/transmission"
+	"github.com/zhulik/transmission-telegram/settings"
 	"gopkg.in/telegram-bot-api.v4"
 	"strconv"
 	"strings"
@@ -25,7 +26,7 @@ var (
 )
 
 // receiveTorrent gets an update that potentially has a .torrent file to add
-func receiveTorrent(bot TelegramClient, client TransmissionClient, ud MessageWrapper) {
+func receiveTorrent(bot TelegramClient, client TransmissionClient, ud MessageWrapper, s settings.Settings) {
 	if ud.Document.FileID == "" {
 		return // has no document
 	}
@@ -45,7 +46,7 @@ func receiveTorrent(bot TelegramClient, client TransmissionClient, ud MessageWra
 }
 
 // stop takes id[s] of torrent[s] or 'all' to stop them
-func mainCommand(bot TelegramClient, client TransmissionClient, ud MessageWrapper) {
+func mainCommand(bot TelegramClient, client TransmissionClient, ud MessageWrapper, s settings.Settings) {
 	// make sure that we got at least one argument
 	if len(ud.Tokens()) == 0 {
 		send(bot, fmt.Sprintf("*%s*: needs an argument", ud.Command()), ud.Chat.ID)
@@ -84,7 +85,7 @@ func mainCommand(bot TelegramClient, client TransmissionClient, ud MessageWrappe
 }
 
 // del takes an id or more, and delete the corresponding torrent/s
-func delCommand(bot TelegramClient, client TransmissionClient, ud MessageWrapper) {
+func delCommand(bot TelegramClient, client TransmissionClient, ud MessageWrapper, s settings.Settings) {
 	// make sure that we got an argument
 	if len(ud.Tokens()) == 0 {
 		send(bot, fmt.Sprintf("*%s*: needs an ID", ud.Command()), ud.Chat.ID)
@@ -110,7 +111,7 @@ func delCommand(bot TelegramClient, client TransmissionClient, ud MessageWrapper
 }
 
 // version sends transmission version + transmission-telegram version
-func version(bot TelegramClient, client TransmissionClient, ud MessageWrapper) {
+func version(bot TelegramClient, client TransmissionClient, ud MessageWrapper, s settings.Settings) {
 	send(bot, fmt.Sprintf("Transmission *%s*\nTransmission-telegram *%s*", client.Version(), VERSION), ud.Chat.ID)
 }
 
@@ -141,22 +142,22 @@ func addTorrentsByURL(bot TelegramClient, client TransmissionClient, ud MessageW
 }
 
 // add takes an URL to a .torrent file in message to add it to transmission
-func add(bot TelegramClient, client TransmissionClient, ud MessageWrapper) {
+func add(bot TelegramClient, client TransmissionClient, ud MessageWrapper, s settings.Settings) {
 	addTorrentsByURL(bot, client, ud, ud.Tokens())
 }
 
 // help sends help messsage
-func help(bot TelegramClient, client TransmissionClient, ud MessageWrapper) {
+func help(bot TelegramClient, client TransmissionClient, ud MessageWrapper, s settings.Settings) {
 	send(bot, HELP, ud.Chat.ID)
 }
 
 // unknownCommand sends message that command is unknown
-func unknownCommand(bot TelegramClient, client TransmissionClient, ud MessageWrapper) {
+func unknownCommand(bot TelegramClient, client TransmissionClient, ud MessageWrapper, s settings.Settings) {
 	send(bot, "no such command, try /help", ud.Chat.ID)
 }
 
 // sort changes torrents sorting
-func sortComand(bot TelegramClient, client TransmissionClient, ud MessageWrapper) {
+func sortCommand(bot TelegramClient, client TransmissionClient, ud MessageWrapper, s settings.Settings) {
 	if len(ud.Tokens()) == 0 {
 		send(bot, `sort takes one of:
 			(*id, name, age, size, progress, downspeed, upspeed, download, upload, ratio*)

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/dustin/go-humanize"
 	"github.com/pyed/transmission"
+	"github.com/zhulik/transmission-telegram/settings"
 	"gopkg.in/telegram-bot-api.v4"
 	"log"
 	"reflect"
@@ -66,7 +67,7 @@ func (w MessageWrapper) Tokens() []string {
 	return w.tokens
 }
 
-type CommandHandler func(bot TelegramClient, client TransmissionClient, ud MessageWrapper)
+type CommandHandler func(bot TelegramClient, client TransmissionClient, ud MessageWrapper, s settings.Settings)
 type TorrentFilter func(torrent *transmission.Torrent) bool
 
 func ellipsisString(str string, length int) string {

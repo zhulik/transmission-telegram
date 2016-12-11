@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/pyed/transmission"
+	"github.com/zhulik/transmission-telegram/settings"
 	"log"
 	"time"
 )
@@ -24,7 +25,7 @@ func sendFinishedTorrent(bot TelegramClient, t *transmission.Torrent, chatID int
 	log.Println("Finished torrent was sent")
 }
 
-func notifyFinished(bot TelegramClient, client TransmissionClient, ud MessageWrapper) {
+func notifyFinished(bot TelegramClient, client TransmissionClient, ud MessageWrapper, s settings.Settings) {
 	var torrents transmission.Torrents
 	send(bot, "I will notify you about finished torrents", ud.Chat.ID)
 	for {
