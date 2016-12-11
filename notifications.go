@@ -59,6 +59,19 @@ func notifyFinished(bot TelegramClient, client TransmissionClient, masters []str
 }
 
 func notifications(bot TelegramClient, client TransmissionClient, ud MessageWrapper, s settings.Settings) {
+	if len(ud.Tokens()) == 0 {
+		b, err := s.GetUserNotification(ud.Chat.UserName)
+		if err != nil {
+			send(bot, fmt.Sprintf("*notifications*: error get settings: %s", err.Error()), ud.Chat.ID)
+			return
+		}
+		if b {
+			send(bot, "*notifications* is enabled", ud.Chat.ID)
+		} else {
+			send(bot, "*notifications* is disabled", ud.Chat.ID)
+		}
+		return
+	}
 	switch strings.ToLower(ud.Tokens()[0]) {
 	case "on", "true", "enable":
 		err := s.SetUserNotification(ud.Chat.UserName, true)
