@@ -11,3 +11,4 @@ Manage your transmission through Telegram.
 
 * Notifications
 * Multiple masters or password auth
+* Keyboards and buttons

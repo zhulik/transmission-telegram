@@ -134,6 +134,7 @@ func main() {
 	}
 
 	bot, err := tgbotapi.NewBotAPI(botToken)
+	// bot.Debug = true
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "[ERROR] Telegram: %s", err)
 		os.Exit(1)
@@ -148,6 +149,9 @@ func main() {
 		log.Printf("[ERROR] Telegram: %s", err)
 		os.Exit(1)
 	}
+
+	b := &TelegramClientWrapper{bot: bot}
+	// go notifyFinished(b, client, masters)
 
 	for update := range updates {
 		var wrapper MessageWrapper
@@ -167,8 +171,6 @@ func main() {
 			log.Printf("[INFO] Ignored a message from: %s", wrapper.Message.From.String())
 			continue
 		}
-
-		b := &TransmissionClientWrapper{bot: bot}
 
 		go func() {
 			defer func() {
@@ -217,6 +219,9 @@ func findHandler(command string) CommandHandler {
 
 	case "del", "/del", "deldata", "/deldata":
 		return delCommand
+
+	case "notify":
+		return notifyFinished
 
 	case "help", "/help":
 		return help
