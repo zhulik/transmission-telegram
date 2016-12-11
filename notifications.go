@@ -9,8 +9,8 @@ import (
 
 func findFinished(before transmission.Torrents, after transmission.Torrents) (result transmission.Torrents) {
 	for _, aT := range after {
-		for _, aB := range after {
-			if aT.ID == aB.ID && aT.IsFinished != aB.IsFinished {
+		for _, bT := range before {
+			if aT.ID == bT.ID && (bT.Status == transmission.StatusDownloading && (aT.Status == transmission.StatusSeeding || aT.Status == transmission.StatusSeedPending)) {
 				result = append(result, aT)
 			}
 		}
@@ -28,19 +28,14 @@ func notifyFinished(bot TelegramClient, client TransmissionClient, ud MessageWra
 	var torrents transmission.Torrents
 	send(bot, "I will notify you about finished torrents", ud.Chat.ID)
 	for {
-		log.Println("Looking for finished torrents")
 		newTorrents, err := client.GetTorrents()
 		if err != nil {
 			log.Println("GetTorrents failed:", err.Error())
 			continue
 		}
 
-		finished := findFinished(torrents, newTorrents)
-		log.Println("Found finished torrents", len(finished))
-		if len(finished) > 0 {
-			for _, t := range newTorrents {
-				go sendFinishedTorrent(bot, t, ud.Chat.ID)
-			}
+		for _, t := range findFinished(torrents, newTorrents) {
+			go sendFinishedTorrent(bot, t, ud.Chat.ID)
 		}
 		torrents = newTorrents
 		time.Sleep(time.Second * interval)

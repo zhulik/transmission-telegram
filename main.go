@@ -16,7 +16,7 @@ const (
 	VERSION = "2.0"
 
 	HELP = `
-	*ls* [dl, sd, pa, ch, er]
+	*ls* or *list* [dl, sd, pa, ch, er]
 	Lists the torrents. Optional argument:
 		*dl* - Lists torrents with the status of Downloading or in the queue to download.
 		*sd* - Lists torrents with the status of Seeding or in the queue to seed.
@@ -187,7 +187,7 @@ func main() {
 
 func findHandler(command string) CommandHandler {
 	switch command {
-	case "ls", "/ls":
+	case "list", "/list", "ls", "/ls":
 		return list
 
 	case "sort", "/sort", "so", "/so":

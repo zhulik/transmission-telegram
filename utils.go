@@ -109,6 +109,7 @@ LenCheck:
 	msg := tgbotapi.NewMessage(chatID, text)
 	msg.DisableWebPagePreview = true
 	msg.ParseMode = tgbotapi.ModeMarkdown
+	msg.ReplyMarkup = commandsKeyboard()
 
 	resp, err := bot.Send(msg)
 	if err != nil {

@@ -10,5 +10,5 @@ Manage your transmission through Telegram.
 ## Todo
 
 * Notifications
-* Multiple masters or password auth
 * Keyboards and buttons
+* Persistent settings storage
