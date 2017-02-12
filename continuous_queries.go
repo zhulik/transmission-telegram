@@ -19,20 +19,20 @@ const (
 // info takes an id of a torrent and returns some info about it
 func info(bot TelegramClient, client TransmissionClient, ud MessageWrapper, s settings.Settings) {
 	if len(ud.Tokens()) == 0 {
-		send(bot, "*info*: needs a torrent ID number", ud.Chat.ID)
+		send(bot, "*info*: needs a torrent ID number", ud.Chat.ID, true)
 		return
 	}
 
 	for _, id := range ud.Tokens() {
 		torrentID, err := strconv.Atoi(id)
 		if err != nil {
-			send(bot, fmt.Sprintf("*info*: %s is not a number", id), ud.Chat.ID)
+			send(bot, fmt.Sprintf("*info*: %s is not a number", id), ud.Chat.ID, true)
 			continue
 		}
 
 		_, err = client.GetTorrent(torrentID)
 		if err != nil {
-			send(bot, fmt.Sprintf("*info*: Can't find a torrent with an ID of %d", torrentID), ud.Chat.ID)
+			send(bot, fmt.Sprintf("*info*: Can't find a torrent with an ID of %d", torrentID), ud.Chat.ID, true)
 			continue
 		}
 		go updateTorrentInfo(bot, client, ud, torrentID)
@@ -55,7 +55,7 @@ func updateTorrentInfo(bot TelegramClient, client TransmissionClient, ud Message
 
 		// update the message
 		if msgID == -1 {
-			msgID = send(bot, info, ud.Chat.ID)
+			msgID = send(bot, info, ud.Chat.ID, false)
 			time.Sleep(time.Second * interval)
 			continue
 		} else {
@@ -89,7 +89,7 @@ func speed(bot TelegramClient, client TransmissionClient, ud MessageWrapper, s s
 	for i := 0; i < duration; i++ {
 		stats, err := client.GetStats()
 		if err != nil {
-			send(bot, fmt.Sprintf("*speed*: `%s`", err.Error()), ud.Chat.ID)
+			send(bot, fmt.Sprintf("*speed*: `%s`", err.Error()), ud.Chat.ID, true)
 			return
 		}
 
@@ -97,7 +97,7 @@ func speed(bot TelegramClient, client TransmissionClient, ud MessageWrapper, s s
 
 		// if we haven't send a message, send it and save the message ID to edit it the next iteration
 		if msgID == -1 {
-			msgID = send(bot, msg, ud.Chat.ID)
+			msgID = send(bot, msg, ud.Chat.ID, false)
 			time.Sleep(time.Second * interval)
 			continue
 		}
@@ -120,7 +120,7 @@ func progress(bot TelegramClient, client TransmissionClient, ud MessageWrapper, 
 	for i := 0; i < duration; i++ {
 		torrents, err := client.GetTorrents()
 		if err != nil {
-			send(bot, "Torrents obtain error: "+err.Error(), ud.Chat.ID)
+			send(bot, "Torrents obtain error: "+err.Error(), ud.Chat.ID, true)
 			continue
 		}
 
@@ -132,12 +132,12 @@ func progress(bot TelegramClient, client TransmissionClient, ud MessageWrapper, 
 		}
 
 		if buf.Len() == 0 {
-			send(bot, "No torrents", ud.Chat.ID)
+			send(bot, "No torrents", ud.Chat.ID, true)
 			return
 		}
 
 		if msgID == -1 {
-			msgID = send(bot, buf.String(), ud.Chat.ID)
+			msgID = send(bot, buf.String(), ud.Chat.ID, false)
 			continue
 		}
 

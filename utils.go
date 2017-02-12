@@ -78,7 +78,7 @@ func ellipsisString(str string, length int) string {
 }
 
 // send takes a chat id and a message to send, returns the message id of the send message
-func send(bot TelegramClient, text string, chatID int64) int {
+func send(bot TelegramClient, text string, chatID int64, addKeyboard bool) int {
 	// set typing action
 	action := tgbotapi.NewChatAction(chatID, tgbotapi.ChatTyping)
 	bot.Send(action)
@@ -110,7 +110,9 @@ LenCheck:
 	msg := tgbotapi.NewMessage(chatID, text)
 	msg.DisableWebPagePreview = true
 	msg.ParseMode = tgbotapi.ModeMarkdown
-	msg.ReplyMarkup = commandsKeyboard()
+	if addKeyboard {
+		msg.ReplyMarkup = commandsKeyboard()
+	}
 
 	resp, err := bot.Send(msg)
 	if err != nil {
@@ -127,17 +129,17 @@ func sendTorrents(bot TelegramClient, ud MessageWrapper, torrents transmission.T
 	}
 
 	if buf.Len() == 0 {
-		send(bot, "No torrents", ud.Message.Chat.ID)
+		send(bot, "No torrents", ud.Message.Chat.ID, true)
 		return
 	}
 
-	send(bot, buf.String(), ud.Message.Chat.ID)
+	send(bot, buf.String(), ud.Message.Chat.ID, true)
 }
 
 func sendFilteredTorrets(bot TelegramClient, client TransmissionClient, ud MessageWrapper, filter TorrentFilter) {
 	torrents, err := client.GetTorrents()
 	if err != nil {
-		send(bot, "Torrents obtain error: "+err.Error(), ud.Message.Chat.ID)
+		send(bot, "Torrents obtain error: "+err.Error(), ud.Message.Chat.ID, true)
 		return
 	}
 

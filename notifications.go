@@ -22,7 +22,7 @@ func findFinished(before transmission.Torrents, after transmission.Torrents) (re
 
 func sendFinishedTorrent(bot TelegramClient, t *transmission.Torrent, chatID int64) {
 	msg := fmt.Sprintf("*%d* `%s` is finished!", t.ID, ellipsisString(t.Name, 25))
-	send(bot, msg, chatID)
+	send(bot, msg, chatID, true)
 	log.Println("Finished torrent was sent")
 }
 
@@ -62,13 +62,13 @@ func notifications(bot TelegramClient, client TransmissionClient, ud MessageWrap
 	if len(ud.Tokens()) == 0 {
 		b, err := s.GetUserNotification(ud.Chat.UserName)
 		if err != nil {
-			send(bot, fmt.Sprintf("*notifications*: error get settings: %s", err.Error()), ud.Chat.ID)
+			send(bot, fmt.Sprintf("*notifications*: error get settings: %s", err.Error()), ud.Chat.ID, true)
 			return
 		}
 		if b {
-			send(bot, "*notifications* is enabled", ud.Chat.ID)
+			send(bot, "*notifications* is enabled", ud.Chat.ID, true)
 		} else {
-			send(bot, "*notifications* is disabled", ud.Chat.ID)
+			send(bot, "*notifications* is disabled", ud.Chat.ID, true)
 		}
 		return
 	}
@@ -76,18 +76,18 @@ func notifications(bot TelegramClient, client TransmissionClient, ud MessageWrap
 	case "on", "true", "enable":
 		err := s.SetUserNotification(ud.Chat.UserName, true)
 		if err != nil {
-			send(bot, fmt.Sprintf("*notifications*: error save settings: %s", err.Error()), ud.Chat.ID)
+			send(bot, fmt.Sprintf("*notifications*: error save settings: %s", err.Error()), ud.Chat.ID, true)
 			return
 		}
-		send(bot, "*notifications*: notifications enabled", ud.Chat.ID)
+		send(bot, "*notifications*: notifications enabled", ud.Chat.ID, true)
 	case "off", "false", "disable":
 		err := s.SetUserNotification(ud.Chat.UserName, false)
 		if err != nil {
-			send(bot, fmt.Sprintf("*notifications*: error save settings: %s", err.Error()), ud.Chat.ID)
+			send(bot, fmt.Sprintf("*notifications*: error save settings: %s", err.Error()), ud.Chat.ID, true)
 			return
 		}
-		send(bot, "*notifications*: notifications disabled", ud.Chat.ID)
+		send(bot, "*notifications*: notifications disabled", ud.Chat.ID, true)
 	default:
-		send(bot, fmt.Sprintf("*notifications*: Unknown argument `%s`", ud.CommandArguments()), ud.Chat.ID)
+		send(bot, fmt.Sprintf("*notifications*: Unknown argument `%s`", ud.CommandArguments()), ud.Chat.ID, true)
 	}
 }

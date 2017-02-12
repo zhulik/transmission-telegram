@@ -198,7 +198,7 @@ func main() {
 		go func() {
 			defer func() {
 				if recover() != nil {
-					send(b, "PANIC: something goes wrong...", wrapper.Message.Chat.ID)
+					send(b, "PANIC: something goes wrong...", wrapper.Message.Chat.ID, true)
 					log.Println(string(debug.Stack()))
 				}
 			}()

@@ -76,7 +76,7 @@ func errors(bot TelegramClient, client TransmissionClient, ud MessageWrapper, s 
 func search(bot TelegramClient, client TransmissionClient, ud MessageWrapper, s settings.Settings) {
 	// make sure that we got a query
 	if len(ud.Tokens()) == 0 {
-		send(bot, "*search*: needs an argument", ud.Chat.ID)
+		send(bot, "*search*: needs an argument", ud.Chat.ID, true)
 		return
 	}
 
@@ -84,7 +84,7 @@ func search(bot TelegramClient, client TransmissionClient, ud MessageWrapper, s 
 	// "(?i)" for case insensitivity
 	regx, err := regexp.Compile("(?i)" + query)
 	if err != nil {
-		send(bot, fmt.Sprintf("*search*: `%s`", err.Error()), ud.Chat.ID)
+		send(bot, fmt.Sprintf("*search*: `%s`", err.Error()), ud.Chat.ID, true)
 		return
 	}
 
@@ -97,7 +97,7 @@ func search(bot TelegramClient, client TransmissionClient, ud MessageWrapper, s 
 func count(bot TelegramClient, client TransmissionClient, ud MessageWrapper, s settings.Settings) {
 	torrents, err := client.GetTorrents()
 	if err != nil {
-		send(bot, fmt.Sprintf("*count*: `%s`", err.Error()), ud.Chat.ID)
+		send(bot, fmt.Sprintf("*count*: `%s`", err.Error()), ud.Chat.ID, true)
 		return
 	}
 
@@ -125,7 +125,7 @@ func count(bot TelegramClient, client TransmissionClient, ud MessageWrapper, s s
 	msg := fmt.Sprintf("*Downloading*: %d\n*Seeding*: %d\n*Paused*: %d\n*Verifying*: %d\n\n- Waiting to -\n*Download*: %d\n*Seed*: %d\n*Verify*: %d\n\n*Total*: %d",
 		downloading, seeding, stopped, checking, downloadingQ, seedingQ, checkingQ, len(torrents))
 
-	send(bot, msg, ud.Chat.ID)
+	send(bot, msg, ud.Chat.ID, true)
 
 }
 
@@ -133,7 +133,7 @@ func count(bot TelegramClient, client TransmissionClient, ud MessageWrapper, s s
 func stats(bot TelegramClient, client TransmissionClient, ud MessageWrapper, s settings.Settings) {
 	stats, err := client.GetStats()
 	if err != nil {
-		send(bot, fmt.Sprintf("*stats*: `%s`", err.Error()), ud.Chat.ID)
+		send(bot, fmt.Sprintf("*stats*: `%s`", err.Error()), ud.Chat.ID, true)
 		return
 	}
 
@@ -167,5 +167,5 @@ func stats(bot TelegramClient, client TransmissionClient, ud MessageWrapper, s s
 		stats.CumulativeActiveTime(),
 	)
 
-	send(bot, msg, ud.Chat.ID)
+	send(bot, msg, ud.Chat.ID, true)
 }
