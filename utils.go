@@ -82,44 +82,25 @@ func send(bot TelegramClient, text string, chatID int64, addKeyboard bool) int {
 	// set typing action
 	action := tgbotapi.NewChatAction(chatID, tgbotapi.ChatTyping)
 	bot.Send(action)
+	lastMessageID := 0
 
-	// check the rune count, telegram is limited to 4096 chars per message;
-	// so if our message is > 4096, split it in chunks the send them.
-	msgRuneCount := utf8.RuneCountInString(text)
-LenCheck:
-	stop := 4095
-	if msgRuneCount > 4096 {
-		for text[stop] != 10 { // '\n'
-			stop--
-		}
-		msg := tgbotapi.NewMessage(chatID, text[:stop])
+	for _, chunk := range splitStringToChunks(text) {
+
+		// if msgRuneCount < 4096, send it normally
+		msg := tgbotapi.NewMessage(chatID, chunk)
 		msg.DisableWebPagePreview = true
 		msg.ParseMode = tgbotapi.ModeMarkdown
+		if addKeyboard {
+			msg.ReplyMarkup = commandsKeyboard()
+		}
 
-		// send current chunk
-		if _, err := bot.Send(msg); err != nil {
+		resp, err := bot.Send(msg)
+		if err != nil {
 			log.Printf("[ERROR] Send: %s", err)
 		}
-		// move to the next chunk
-		text = text[stop:]
-		msgRuneCount = utf8.RuneCountInString(text)
-		goto LenCheck
+		lastMessageID = resp.MessageID
 	}
-
-	// if msgRuneCount < 4096, send it normally
-	msg := tgbotapi.NewMessage(chatID, text)
-	msg.DisableWebPagePreview = true
-	msg.ParseMode = tgbotapi.ModeMarkdown
-	if addKeyboard {
-		msg.ReplyMarkup = commandsKeyboard()
-	}
-
-	resp, err := bot.Send(msg)
-	if err != nil {
-		log.Printf("[ERROR] Send: %s", err)
-	}
-
-	return resp.MessageID
+	return lastMessageID
 }
 
 func sendTorrents(bot TelegramClient, ud MessageWrapper, torrents transmission.Torrents) {
@@ -187,4 +168,23 @@ func progressString(persentage float64, length int) string {
 
 func progressBar(t *transmission.Torrent) string {
 	return fmt.Sprintf("%s %.1f%% %s ↓%s", progressString(t.PercentDone, 10), t.PercentDone, t.ETA(), humanize.Bytes(t.RateDownload))
+}
+
+func splitStringToChunks(text string) []string {
+	sub := ""
+	subs := []string{}
+
+	runes := bytes.Runes([]byte(text))
+	l := len(runes)
+	for i, r := range runes {
+		sub = sub + string(r)
+		if (i+1)%4096 == 0 {
+			subs = append(subs, sub)
+			sub = ""
+		} else if (i + 1) == l {
+			subs = append(subs, sub)
+		}
+	}
+
+	return subs
 }
