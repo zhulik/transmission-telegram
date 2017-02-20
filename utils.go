@@ -80,6 +80,15 @@ func ellipsisString(str string, length int) string {
 
 // send takes a chat id and a message to send, returns the message id of the send message
 func send(bot telegramClient, text string, chatID int64, addKeyboard bool) int {
+	var keyboard interface{}
+
+	if addKeyboard {
+		keyboard = commandsKeyboard()
+	}
+	return sendWithKeyboard(bot, text, chatID, keyboard)
+}
+
+func sendWithKeyboard(bot telegramClient, text string, chatID int64, keyboard interface{}) int {
 	// set typing action
 	action := tgbotapi.NewChatAction(chatID, tgbotapi.ChatTyping)
 	bot.Send(action)
@@ -91,9 +100,7 @@ func send(bot telegramClient, text string, chatID int64, addKeyboard bool) int {
 		msg := tgbotapi.NewMessage(chatID, chunk)
 		msg.DisableWebPagePreview = true
 		msg.ParseMode = tgbotapi.ModeMarkdown
-		if addKeyboard {
-			msg.ReplyMarkup = commandsKeyboard()
-		}
+		msg.ReplyMarkup = keyboard
 
 		resp, err := bot.Send(msg)
 		if err != nil {
