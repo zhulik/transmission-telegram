@@ -3,9 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/pyed/transmission"
-	"github.com/zhulik/transmission-telegram/settings"
-	"gopkg.in/telegram-bot-api.v4"
 	"log"
 	"os"
 	"os/user"
@@ -13,11 +10,17 @@ import (
 	"runtime/debug"
 	"sort"
 	"strings"
+
+	"github.com/pyed/transmission"
+	"github.com/zhulik/transmission-telegram/settings"
+	"gopkg.in/telegram-bot-api.v4"
 )
 
 const (
-	VERSION = "2.0"
+	//VERSION of bot
+	VERSION = "2.1"
 
+	// HELP message for help command
 	HELP = `
 	*ls* or *list* [dl, sd, pa, ch, er]
 	Lists the torrents. Optional argument:
@@ -81,6 +84,7 @@ func main() {
 	var transmissionUsername string
 	var transmissionPassword string
 	var logFile string
+	var verbose bool
 
 	flag.StringVar(&botToken, "token", "", "Telegram bot token")
 	flag.StringVar(&masterUsernames, "masters", "", "Your telegram handlers, separated with comma, so the bot will only respond to them")
@@ -88,10 +92,11 @@ func main() {
 	flag.StringVar(&transmissionUsername, "username", "", "Transmission username")
 	flag.StringVar(&transmissionPassword, "password", "", "Transmission password")
 	flag.StringVar(&logFile, "logfile", "", "Send logs to a file")
+	flag.BoolVar(&verbose, "v", false, "Verbose output")
 
 	// set the usage message
 	flag.Usage = func() {
-		fmt.Fprint(os.Stderr, "Usage: transmission-bot -token=<TOKEN> -master=<@tuser> -url=[http://] -username=[user] -password=[pass]\n\n")
+		fmt.Fprint(os.Stderr, "Usage: transmission-bot -token=<TOKEN> -masters=<user,user2> -url=[http://] -username=[user] -password=[pass]\n\n")
 		flag.PrintDefaults()
 	}
 
@@ -137,7 +142,7 @@ func main() {
 	}
 
 	bot, err := tgbotapi.NewBotAPI(botToken)
-	// bot.Debug = true
+	bot.Debug = verbose
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "[ERROR] Telegram: %s", err)
 		os.Exit(1)
