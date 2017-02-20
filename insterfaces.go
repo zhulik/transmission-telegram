@@ -5,28 +5,28 @@ import (
 	"gopkg.in/telegram-bot-api.v4"
 )
 
-type TelegramClientWrapper struct {
+type telegramClientWrapper struct {
 	bot *tgbotapi.BotAPI
 }
 
-func (bot *TelegramClientWrapper) Send(c tgbotapi.Chattable) (tgbotapi.Message, error) {
+func (bot *telegramClientWrapper) Send(c tgbotapi.Chattable) (tgbotapi.Message, error) {
 	return bot.bot.Send(c)
 }
-func (bot *TelegramClientWrapper) GetFile(c tgbotapi.FileConfig) (tgbotapi.File, error) {
+func (bot *telegramClientWrapper) GetFile(c tgbotapi.FileConfig) (tgbotapi.File, error) {
 	return bot.bot.GetFile(c)
 }
 
-func (bot *TelegramClientWrapper) Token() string {
+func (bot *telegramClientWrapper) Token() string {
 	return bot.bot.Token
 }
 
-type TelegramClient interface {
+type telegramClient interface {
 	Send(tgbotapi.Chattable) (tgbotapi.Message, error)
 	GetFile(tgbotapi.FileConfig) (tgbotapi.File, error)
 	Token() string
 }
 
-type TransmissionClient interface {
+type transmissionClient interface {
 	GetTorrents() (transmission.Torrents, error)
 	GetStats() (*transmission.Stats, error)
 	Version() string

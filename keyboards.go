@@ -4,7 +4,7 @@ import (
 	"gopkg.in/telegram-bot-api.v4"
 )
 
-func commandsKeyboard() tgbotapi.ReplyKeyboardMarkup {
+func commandsKeyboard() *tgbotapi.ReplyKeyboardMarkup {
 	// progress stop all start all stats
 	row1 := []tgbotapi.KeyboardButton{tgbotapi.NewKeyboardButton("list"),
 		tgbotapi.NewKeyboardButton("speed"),
@@ -19,5 +19,5 @@ func commandsKeyboard() tgbotapi.ReplyKeyboardMarkup {
 	}
 	commandsKeyboard := tgbotapi.NewReplyKeyboard(row1, row2)
 
-	return commandsKeyboard
+	return &commandsKeyboard
 }

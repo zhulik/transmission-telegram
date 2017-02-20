@@ -2,11 +2,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/pyed/transmission"
-	"github.com/zhulik/transmission-telegram/settings"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/pyed/transmission"
+	"github.com/zhulik/transmission-telegram/settings"
 )
 
 func findFinished(before transmission.Torrents, after transmission.Torrents) (result transmission.Torrents) {
@@ -20,13 +21,13 @@ func findFinished(before transmission.Torrents, after transmission.Torrents) (re
 	return
 }
 
-func sendFinishedTorrent(bot TelegramClient, t *transmission.Torrent, chatID int64) {
+func sendFinishedTorrent(bot telegramClient, t *transmission.Torrent, chatID int64) {
 	msg := fmt.Sprintf("*%d* `%s` is finished!", t.ID, ellipsisString(t.Name, 25))
 	send(bot, msg, chatID, true)
 	log.Println("Finished torrent was sent")
 }
 
-func notifyFinished(bot TelegramClient, client TransmissionClient, masters []string, s settings.Settings) {
+func notifyFinished(bot telegramClient, client transmissionClient, masters []string, s settings.Settings) {
 	var torrents transmission.Torrents
 	for {
 		newTorrents, err := client.GetTorrents()
@@ -58,7 +59,7 @@ func notifyFinished(bot TelegramClient, client TransmissionClient, masters []str
 	}
 }
 
-func notifications(bot TelegramClient, client TransmissionClient, ud MessageWrapper, s settings.Settings) {
+func notifications(bot telegramClient, client transmissionClient, ud messageWrapper, s settings.Settings) {
 	if len(ud.Tokens()) == 0 {
 		b, err := s.GetUserNotification(ud.Chat.UserName)
 		if err != nil {

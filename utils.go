@@ -3,72 +3,73 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"github.com/dustin/go-humanize"
-	"github.com/pyed/transmission"
-	"github.com/zhulik/transmission-telegram/settings"
-	"gopkg.in/telegram-bot-api.v4"
 	"log"
 	"reflect"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/dustin/go-humanize"
+	"github.com/pyed/transmission"
+	"github.com/zhulik/transmission-telegram/settings"
+	"gopkg.in/telegram-bot-api.v4"
 )
 
 var (
-	SortingMethods = map[SortMethod]transmission.Sorting{
-		SortMethod{"id", false}:       transmission.SortID,
-		SortMethod{"id", true}:        transmission.SortRevID,
-		SortMethod{"name", false}:     transmission.SortName,
-		SortMethod{"name", true}:      transmission.SortRevName,
-		SortMethod{"age", false}:      transmission.SortAge,
-		SortMethod{"age", true}:       transmission.SortRevAge,
-		SortMethod{"size", false}:     transmission.SortSize,
-		SortMethod{"size", true}:      transmission.SortRevSize,
-		SortMethod{"progress", false}: transmission.SortProgress,
-		SortMethod{"progress", true}:  transmission.SortRevProgress,
-		SortMethod{"downsped", false}: transmission.SortDownSpeed,
-		SortMethod{"downsped", true}:  transmission.SortRevDownSpeed,
-		SortMethod{"upspeed", false}:  transmission.SortUpSpeed,
-		SortMethod{"upspeed", true}:   transmission.SortRevUpSpeed,
+	sortingMethods = map[sortMethod]transmission.Sorting{
+		sortMethod{"id", false}:       transmission.SortID,
+		sortMethod{"id", true}:        transmission.SortRevID,
+		sortMethod{"name", false}:     transmission.SortName,
+		sortMethod{"name", true}:      transmission.SortRevName,
+		sortMethod{"age", false}:      transmission.SortAge,
+		sortMethod{"age", true}:       transmission.SortRevAge,
+		sortMethod{"size", false}:     transmission.SortSize,
+		sortMethod{"size", true}:      transmission.SortRevSize,
+		sortMethod{"progress", false}: transmission.SortProgress,
+		sortMethod{"progress", true}:  transmission.SortRevProgress,
+		sortMethod{"downsped", false}: transmission.SortDownSpeed,
+		sortMethod{"downsped", true}:  transmission.SortRevDownSpeed,
+		sortMethod{"upspeed", false}:  transmission.SortUpSpeed,
+		sortMethod{"upspeed", true}:   transmission.SortRevUpSpeed,
 
-		SortMethod{"download", false}: transmission.SortDownloaded,
-		SortMethod{"download", true}:  transmission.SortRevDownloaded,
+		sortMethod{"download", false}: transmission.SortDownloaded,
+		sortMethod{"download", true}:  transmission.SortRevDownloaded,
 
-		SortMethod{"upload", false}: transmission.SortUploaded,
-		SortMethod{"upload", true}:  transmission.SortRevUploaded,
+		sortMethod{"upload", false}: transmission.SortUploaded,
+		sortMethod{"upload", true}:  transmission.SortRevUploaded,
 
-		SortMethod{"ratio", false}: transmission.SortRatio,
-		SortMethod{"ratio", true}:  transmission.SortRevRatio,
+		sortMethod{"ratio", false}: transmission.SortRatio,
+		sortMethod{"ratio", true}:  transmission.SortRevRatio,
 	}
 )
 
-type SortMethod struct {
+type sortMethod struct {
 	name     string
 	reversed bool
 }
 
-type MessageWrapper struct {
+type messageWrapper struct {
 	*tgbotapi.Message
 	command string
 	tokens  []string
 }
 
-func WrapMessage(message *tgbotapi.Message) MessageWrapper {
+func wrapMessage(message *tgbotapi.Message) messageWrapper {
 	tokens := strings.Split(message.Text, " ")
 	command := strings.ToLower(tokens[0])
 	args := tokens[1:]
-	return MessageWrapper{message, command, args}
+	return messageWrapper{message, command, args}
 }
 
-func (w MessageWrapper) Command() string {
+func (w messageWrapper) Command() string {
 	return w.command
 }
 
-func (w MessageWrapper) Tokens() []string {
+func (w messageWrapper) Tokens() []string {
 	return w.tokens
 }
 
-type CommandHandler func(bot TelegramClient, client TransmissionClient, ud MessageWrapper, s settings.Settings)
-type TorrentFilter func(torrent *transmission.Torrent) bool
+type commandHandler func(bot telegramClient, client transmissionClient, ud messageWrapper, s settings.Settings)
+type torrentFilter func(torrent *transmission.Torrent) bool
 
 func ellipsisString(str string, length int) string {
 	if utf8.RuneCountInString(str) > length {
@@ -78,7 +79,7 @@ func ellipsisString(str string, length int) string {
 }
 
 // send takes a chat id and a message to send, returns the message id of the send message
-func send(bot TelegramClient, text string, chatID int64, addKeyboard bool) int {
+func send(bot telegramClient, text string, chatID int64, addKeyboard bool) int {
 	// set typing action
 	action := tgbotapi.NewChatAction(chatID, tgbotapi.ChatTyping)
 	bot.Send(action)
@@ -103,7 +104,7 @@ func send(bot TelegramClient, text string, chatID int64, addKeyboard bool) int {
 	return lastMessageID
 }
 
-func sendTorrents(bot TelegramClient, ud MessageWrapper, torrents transmission.Torrents) {
+func sendTorrents(bot telegramClient, ud messageWrapper, torrents transmission.Torrents) {
 	buf := new(bytes.Buffer)
 	for _, torrent := range torrents {
 		buf.WriteString(fmt.Sprintf("*%d* `%s` _%s_\n", torrent.ID, ellipsisString(torrent.Name, 25), torrent.TorrentStatus()))
@@ -117,7 +118,7 @@ func sendTorrents(bot TelegramClient, ud MessageWrapper, torrents transmission.T
 	send(bot, buf.String(), ud.Message.Chat.ID, true)
 }
 
-func sendFilteredTorrets(bot TelegramClient, client TransmissionClient, ud MessageWrapper, filter TorrentFilter) {
+func sendFilteredTorrets(bot telegramClient, client transmissionClient, ud messageWrapper, filter torrentFilter) {
 	torrents, err := client.GetTorrents()
 	if err != nil {
 		send(bot, "Torrents obtain error: "+err.Error(), ud.Message.Chat.ID, true)
@@ -133,9 +134,9 @@ func sendFilteredTorrets(bot TelegramClient, client TransmissionClient, ud Messa
 	sendTorrents(bot, ud, filteredTorrents)
 }
 
-func InvokeError(any interface{}, name string, args ...interface{}) error {
+func invokeError(any interface{}, name string, args ...interface{}) error {
 	inputs := make([]reflect.Value, len(args))
-	for i, _ := range args {
+	for i := range args {
 		inputs[i] = reflect.ValueOf(args[i])
 	}
 	err := reflect.ValueOf(any).MethodByName(name).Call(inputs)[0].Interface()
@@ -145,9 +146,9 @@ func InvokeError(any interface{}, name string, args ...interface{}) error {
 	return nil
 }
 
-func InvokeStatus(any interface{}, name string, args ...interface{}) (string, error) {
+func invokeStatus(any interface{}, name string, args ...interface{}) (string, error) {
 	inputs := make([]reflect.Value, len(args))
-	for i, _ := range args {
+	for i := range args {
 		inputs[i] = reflect.ValueOf(args[i])
 	}
 	results := reflect.ValueOf(any).MethodByName(name).Call(inputs)

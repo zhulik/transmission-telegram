@@ -158,7 +158,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	b := &TelegramClientWrapper{bot: bot}
+	b := &telegramClientWrapper{bot: bot}
 
 	usr, err := user.Current()
 	if err != nil {
@@ -181,15 +181,15 @@ func main() {
 	go notifyFinished(b, client, masters, s)
 
 	for update := range updates {
-		var wrapper MessageWrapper
+		var wrapper messageWrapper
 		if update.Message == nil {
 			if update.UpdateID > 0 {
-				wrapper = WrapMessage(update.EditedMessage)
+				wrapper = wrapMessage(update.EditedMessage)
 			} else {
 				continue
 			}
 		} else {
-			wrapper = WrapMessage(update.Message)
+			wrapper = wrapMessage(update.Message)
 		}
 
 		// ignore anyone other than 'masters'
@@ -213,7 +213,7 @@ func main() {
 	}
 }
 
-func findHandler(command string) CommandHandler {
+func findHandler(command string) commandHandler {
 	switch command {
 	case "list", "/list", "ls", "/ls":
 		return list
