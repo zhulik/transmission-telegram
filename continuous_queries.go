@@ -56,31 +56,15 @@ func updateTorrentInfo(bot telegramClient, client transmissionClient, ud message
 
 		// update the message
 		if msgID == -1 {
-			msgID = send(bot, info, ud.Chat.ID, false)
-			time.Sleep(time.Second * interval)
-			continue
+			msgID = sendWithKeyboard(bot, info, ud.Chat.ID, torrentKeyboard(torrentID))
 		} else {
 			editConf := tgbotapi.NewEditMessageText(ud.Chat.ID, msgID, info)
 			editConf.ParseMode = tgbotapi.ModeMarkdown
+			editConf.ReplyMarkup = torrentKeyboard(torrentID)
 			bot.Send(editConf)
 		}
 		time.Sleep(time.Second * interval)
 	}
-
-	torrent, err := client.GetTorrent(torrentID)
-	if err != nil {
-		return
-	}
-
-	// at the end write dashes to indicate that we are done being live.
-	info := fmt.Sprintf("*%d* `%s`\n%s *%s* of *%s* (*%.1f%%*) ↓ *- B*  ↑ *- B* R: *%s*\nDL: *%s* UP: *%s*\nAdded: *%s*, ETA: *-*\n",
-		torrent.ID, torrent.Name, torrent.TorrentStatus(), humanize.Bytes(torrent.Have()), humanize.Bytes(torrent.SizeWhenDone),
-		torrent.PercentDone*100, torrent.Ratio(), humanize.Bytes(torrent.DownloadedEver), humanize.Bytes(torrent.UploadedEver),
-		time.Unix(torrent.AddedDate, 0).Format(time.Stamp))
-
-	editConf := tgbotapi.NewEditMessageText(ud.Chat.ID, msgID, info)
-	editConf.ParseMode = tgbotapi.ModeMarkdown
-	bot.Send(editConf)
 }
 
 // speed will echo back the current download and upload speeds

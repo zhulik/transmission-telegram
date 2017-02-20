@@ -183,10 +183,17 @@ func main() {
 	for update := range updates {
 		var wrapper messageWrapper
 		if update.Message == nil {
-			if update.UpdateID > 0 {
+			if update.EditedMessage != nil {
 				wrapper = wrapMessage(update.EditedMessage)
 			} else {
-				continue
+				if update.CallbackQuery != nil {
+					msg := tgbotapi.Message{MessageID: update.CallbackQuery.Message.MessageID, Chat: update.CallbackQuery.Message.Chat, Text: update.CallbackQuery.Data}
+					wrapper = wrapMessage(&msg)
+					answer := tgbotapi.NewCallback(update.CallbackQuery.ID, "")
+					bot.AnswerCallbackQuery(answer)
+				} else {
+					continue
+				}
 			}
 		} else {
 			wrapper = wrapMessage(update.Message)
