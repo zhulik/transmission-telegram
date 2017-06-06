@@ -18,7 +18,7 @@ const (
 )
 
 // info takes an id of a torrent and returns some info about it
-func info(bot telegramClient, client transmissionClient, ud messageWrapper, s settings.Settings) {
+func info(bot telegramClient, client torrentClient, ud messageWrapper, s settings.Settings) {
 	if len(ud.Tokens()) == 0 {
 		send(bot, "*info*: needs a torrent ID number", ud.Chat.ID, true)
 		return
@@ -40,7 +40,7 @@ func info(bot telegramClient, client transmissionClient, ud messageWrapper, s se
 	}
 }
 
-func updateTorrentInfo(bot telegramClient, client transmissionClient, ud messageWrapper, torrentID int) {
+func updateTorrentInfo(bot telegramClient, client torrentClient, ud messageWrapper, torrentID int) {
 	msgID := -1
 	for i := 0; i < duration; i++ {
 		torrent, err := client.GetTorrent(torrentID)
@@ -68,7 +68,7 @@ func updateTorrentInfo(bot telegramClient, client transmissionClient, ud message
 }
 
 // speed will echo back the current download and upload speeds
-func speed(bot telegramClient, client transmissionClient, ud messageWrapper, s settings.Settings) {
+func speed(bot telegramClient, client torrentClient, ud messageWrapper, s settings.Settings) {
 	// keep track of the returned message ID from 'send()' to edit the message.
 	msgID := -1
 	for i := 0; i < duration; i++ {
@@ -100,7 +100,7 @@ func speed(bot telegramClient, client transmissionClient, ud messageWrapper, s s
 }
 
 // progress echo bach progress and other info for downloading torrents
-func progress(bot telegramClient, client transmissionClient, ud messageWrapper, s settings.Settings) {
+func progress(bot telegramClient, client torrentClient, ud messageWrapper, s settings.Settings) {
 	msgID := -1
 	for i := 0; i < duration; i++ {
 		torrents, err := client.GetTorrents()

@@ -14,7 +14,7 @@ var (
 )
 
 // list will form and send a list of all the torrents
-func list(bot telegramClient, client transmissionClient, ud messageWrapper, s settings.Settings) {
+func list(bot telegramClient, client torrentClient, ud messageWrapper, s settings.Settings) {
 	if len(ud.Tokens()) > 0 {
 		mode := ud.Tokens()[0]
 		switch mode {
@@ -35,7 +35,7 @@ func list(bot telegramClient, client transmissionClient, ud messageWrapper, s se
 }
 
 // downs will send the names of torrents with status 'Downloading' or in queue to
-func downs(bot telegramClient, client transmissionClient, ud messageWrapper, s settings.Settings) {
+func downs(bot telegramClient, client torrentClient, ud messageWrapper, s settings.Settings) {
 	sendFilteredTorrets(bot, client, ud, func(t *transmission.Torrent) bool {
 		return t.Status == transmission.StatusDownloading ||
 			t.Status == transmission.StatusDownloadPending
@@ -43,7 +43,7 @@ func downs(bot telegramClient, client transmissionClient, ud messageWrapper, s s
 }
 
 // seeding will send the names of the torrents with the status 'Seeding' or in the queue to
-func seeding(bot telegramClient, client transmissionClient, ud messageWrapper, s settings.Settings) {
+func seeding(bot telegramClient, client torrentClient, ud messageWrapper, s settings.Settings) {
 	sendFilteredTorrets(bot, client, ud, func(t *transmission.Torrent) bool {
 		return t.Status == transmission.StatusSeeding ||
 			t.Status == transmission.StatusSeedPending
@@ -51,14 +51,14 @@ func seeding(bot telegramClient, client transmissionClient, ud messageWrapper, s
 }
 
 // paused will send the names of the torrents with status 'Paused'
-func paused(bot telegramClient, client transmissionClient, ud messageWrapper, s settings.Settings) {
+func paused(bot telegramClient, client torrentClient, ud messageWrapper, s settings.Settings) {
 	sendFilteredTorrets(bot, client, ud, func(t *transmission.Torrent) bool {
 		return t.Status == transmission.StatusStopped
 	})
 }
 
 // checking will send the names of torrents with the status 'verifying' or in the queue to
-func checking(bot telegramClient, client transmissionClient, ud messageWrapper, s settings.Settings) {
+func checking(bot telegramClient, client torrentClient, ud messageWrapper, s settings.Settings) {
 	sendFilteredTorrets(bot, client, ud, func(t *transmission.Torrent) bool {
 		return t.Status == transmission.StatusChecking ||
 			t.Status == transmission.StatusCheckPending
@@ -66,14 +66,14 @@ func checking(bot telegramClient, client transmissionClient, ud messageWrapper, 
 }
 
 // errors will send torrents with errors
-func errors(bot telegramClient, client transmissionClient, ud messageWrapper, s settings.Settings) {
+func errors(bot telegramClient, client torrentClient, ud messageWrapper, s settings.Settings) {
 	sendFilteredTorrets(bot, client, ud, func(t *transmission.Torrent) bool {
 		return t.Error != 0
 	})
 }
 
 // search takes a query and returns torrents with match
-func search(bot telegramClient, client transmissionClient, ud messageWrapper, s settings.Settings) {
+func search(bot telegramClient, client torrentClient, ud messageWrapper, s settings.Settings) {
 	// make sure that we got a query
 	if len(ud.Tokens()) == 0 {
 		send(bot, "*search*: needs an argument", ud.Chat.ID, true)
@@ -94,7 +94,7 @@ func search(bot telegramClient, client transmissionClient, ud messageWrapper, s 
 }
 
 // count returns current torrents count per status
-func count(bot telegramClient, client transmissionClient, ud messageWrapper, s settings.Settings) {
+func count(bot telegramClient, client torrentClient, ud messageWrapper, s settings.Settings) {
 	torrents, err := client.GetTorrents()
 	if err != nil {
 		send(bot, fmt.Sprintf("*count*: `%s`", err.Error()), ud.Chat.ID, true)
@@ -130,7 +130,7 @@ func count(bot telegramClient, client transmissionClient, ud messageWrapper, s s
 }
 
 // stats echo back transmission stats
-func stats(bot telegramClient, client transmissionClient, ud messageWrapper, s settings.Settings) {
+func stats(bot telegramClient, client torrentClient, ud messageWrapper, s settings.Settings) {
 	stats, err := client.GetStats()
 	if err != nil {
 		send(bot, fmt.Sprintf("*stats*: `%s`", err.Error()), ud.Chat.ID, true)

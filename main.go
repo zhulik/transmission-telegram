@@ -123,23 +123,17 @@ func main() {
 		}
 		log.SetOutput(logf)
 	}
-
-	// if the `-username` flag isn't set, look into the environment variable 'TR_AUTH'
-	if transmissionUsername == "" {
-		if values := strings.Split(os.Getenv("TR_AUTH"), ":"); len(values) > 1 {
-			transmissionUsername, transmissionPassword = values[0], values[1]
-		}
-	}
-
 	// log the flags
 	log.Printf("[INFO] Token=%s\nMasters=%s\nURL=%s\nUSER=%s\nPASS=%s",
 		botToken, masterUsernames, transmissionURL, transmissionUsername, transmissionPassword)
 
-	client, err := transmission.New(transmissionURL, transmissionUsername, transmissionPassword)
+	transmission, err := transmission.New(transmissionURL, transmissionUsername, transmissionPassword)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "[ERROR] Transmission: Make sure you have the right URL, Username and Password")
 		os.Exit(1)
 	}
+
+	client := transmissionClient{client: transmission}
 
 	bot, err := tgbotapi.NewBotAPI(botToken)
 	bot.Debug = verbose

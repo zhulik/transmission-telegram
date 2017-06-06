@@ -68,7 +68,7 @@ func (w messageWrapper) Tokens() []string {
 	return w.tokens
 }
 
-type commandHandler func(bot telegramClient, client transmissionClient, ud messageWrapper, s settings.Settings)
+type commandHandler func(bot telegramClient, client torrentClient, ud messageWrapper, s settings.Settings)
 type torrentFilter func(torrent *transmission.Torrent) bool
 
 func ellipsisString(str string, length int) string {
@@ -125,7 +125,7 @@ func sendTorrents(bot telegramClient, ud messageWrapper, torrents transmission.T
 	send(bot, buf.String(), ud.Message.Chat.ID, true)
 }
 
-func sendFilteredTorrets(bot telegramClient, client transmissionClient, ud messageWrapper, filter torrentFilter) {
+func sendFilteredTorrets(bot telegramClient, client torrentClient, ud messageWrapper, filter torrentFilter) {
 	torrents, err := client.GetTorrents()
 	if err != nil {
 		send(bot, "Torrents obtain error: "+err.Error(), ud.Message.Chat.ID, true)

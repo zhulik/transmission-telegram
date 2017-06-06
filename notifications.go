@@ -27,7 +27,7 @@ func sendFinishedTorrent(bot telegramClient, t *transmission.Torrent, chatID int
 	log.Println("Finished torrent was sent")
 }
 
-func notifyFinished(bot telegramClient, client transmissionClient, masters []string, s settings.Settings) {
+func notifyFinished(bot telegramClient, client torrentClient, masters []string, s settings.Settings) {
 	var torrents transmission.Torrents
 	for {
 		newTorrents, err := client.GetTorrents()
@@ -59,7 +59,7 @@ func notifyFinished(bot telegramClient, client transmissionClient, masters []str
 	}
 }
 
-func notifications(bot telegramClient, client transmissionClient, ud messageWrapper, s settings.Settings) {
+func notifications(bot telegramClient, client torrentClient, ud messageWrapper, s settings.Settings) {
 	if len(ud.Tokens()) == 0 {
 		b, err := s.GetUserNotification(ud.Chat.UserName)
 		if err != nil {

@@ -26,13 +26,13 @@ type telegramClient interface {
 	Token() string
 }
 
-type transmissionClient interface {
+type torrentClient interface {
 	GetTorrents() (transmission.Torrents, error)
 	GetStats() (*transmission.Stats, error)
 	Version() string
 	GetTorrent(int) (*transmission.Torrent, error)
 	DeleteTorrent(int, bool) (string, error)
-	ExecuteAddCommand(*transmission.Command) (transmission.TorrentAdded, error)
+	AddByURL(url string) (transmission.TorrentAdded, error)
 	SetSort(transmission.Sorting)
 	StopAll() error
 	StopTorrent(int) (string, error)
