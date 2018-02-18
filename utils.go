@@ -95,13 +95,11 @@ func sendWithKeyboard(bot telegramClient, text string, chatID int64, keyboard in
 	lastMessageID := 0
 
 	for _, chunk := range splitStringToChunks(text) {
-
 		// if msgRuneCount < 4096, send it normally
 		msg := tgbotapi.NewMessage(chatID, chunk)
 		msg.DisableWebPagePreview = true
 		msg.ParseMode = tgbotapi.ModeMarkdown
 		msg.ReplyMarkup = keyboard
-
 		resp, err := bot.Send(msg)
 		if err != nil {
 			log.Printf("[ERROR] Send: %s", err)
@@ -111,10 +109,30 @@ func sendWithKeyboard(bot telegramClient, text string, chatID int64, keyboard in
 	return lastMessageID
 }
 
+func splitStringToChunks(text string) []string {
+	sub := ""
+	subs := []string{}
+
+	runes := bytes.Runes([]byte(text))
+	l := len(runes)
+	for i, r := range runes {
+		sub = sub + string(r)
+		if (i+1)%4096 == 0 {
+			subs = append(subs, sub)
+			sub = ""
+		} else if (i + 1) == l {
+			subs = append(subs, sub)
+		}
+	}
+
+	return subs
+}
+
 func sendTorrents(bot telegramClient, ud messageWrapper, torrents transmission.Torrents) {
 	buf := new(bytes.Buffer)
 	for _, torrent := range torrents {
-		buf.WriteString(fmt.Sprintf("*%d* `%s` _%s_\n", torrent.ID, ellipsisString(torrent.Name, 25), torrent.TorrentStatus()))
+		name := ellipsisString(mdEscape(torrent.Name), 25)
+		buf.WriteString(fmt.Sprintf("*%d* `%s` _%s_\n", torrent.ID, name, torrent.TorrentStatus()))
 	}
 
 	if buf.Len() == 0 {
@@ -176,23 +194,4 @@ func progressString(persentage float64, length int) string {
 
 func progressBar(t *transmission.Torrent) string {
 	return fmt.Sprintf("%s %.1f%% %s ↓%s", progressString(t.PercentDone, 10), t.PercentDone, t.ETA(), humanize.Bytes(t.RateDownload))
-}
-
-func splitStringToChunks(text string) []string {
-	sub := ""
-	subs := []string{}
-
-	runes := bytes.Runes([]byte(text))
-	l := len(runes)
-	for i, r := range runes {
-		sub = sub + string(r)
-		if (i+1)%4096 == 0 {
-			subs = append(subs, sub)
-			sub = ""
-		} else if (i + 1) == l {
-			subs = append(subs, sub)
-		}
-	}
-
-	return subs
 }
