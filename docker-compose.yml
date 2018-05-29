@@ -28,7 +28,7 @@ services:
     # your bot token, passed to -token CLI argument
       - BOT_TOKEN=123456789:MyToken
     # your master users, passed to -master CLI argument
-      - MASTERS=@kolayuk
+      - MASTERS=@myuser
     # URL of transmission service, here it refers to transmission service above
       - TRANSMISSION_URL=http://transmission:9091/transmission/rpc
     # optional for transmission rpc auth
