@@ -16,7 +16,7 @@ transmission even if your server doesn't have white IP address.
 
 `docker run -e BOT_TOKEN=<token> -e MASTERS=<MyUser> -e TRANSMISSION_URL=http://host:9091/transmission/rpc transmission-telegram`
 
-Take a look at [docker-compose.yml](docker-compose.yml) for full reference
+Take a look at [docker-compose.yml](docker-compose.yml) for full reference of supported environment variables
 ## Available commands and queries
 All available queries you can view with `help` command. There are 3 types of commands:
 
