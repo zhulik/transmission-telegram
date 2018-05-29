@@ -12,7 +12,7 @@ transmission even if your server doesn't have white IP address.
 `transmission-telegram -masters <user,other_user> -token <your token> -username <transmission username> -password <transmission password> -url http://<host:port>/transmission/rpc`
 ## Docker usage
 
-`docker build --tag=transmission-telegram`
+`docker build --tag=transmission-telegram .`
 
 `docker run -e BOT_TOKEN=<token> -e MASTERS=<MyUser> -e TRANSMISSION_URL=http://host:9091/transmission/rpc transmission-telegram`
 
