@@ -6,16 +6,9 @@ WORKDIR ./src/github.com/zhulik/transmission-telegram
 
 ADD . ./
 
-RUN go get github.com/pyed/transmission
-
-RUN go get github.com/dustin/go-humanize
-
-RUN go get gopkg.in/telegram-bot-api.v4
-
-RUN go get github.com/boltdb/bolt
+RUN go get
 
 RUN go build -o transmission-telegram ./
-
 
 #ENTRYPOINT ["./transmission-telegram"]
 
