@@ -10,6 +10,7 @@ import (
 	"os"
 	"net/http"
 	"io"
+	"io/ioutil"
 )
 
 var (
@@ -33,7 +34,6 @@ func receiveTorrent(bot telegramClient, client torrentClient, ud messageWrapper,
 	if ud.Document.FileID == "" {
 		return // has no document
 	}
-
 	// get the file ID and make the config
 	fconfig := tgbotapi.FileConfig{
 		FileID: ud.Document.FileID,
@@ -44,7 +44,7 @@ func receiveTorrent(bot telegramClient, client torrentClient, ud messageWrapper,
 		return
 	}
 	// downloading file on Go side (not in Transmission) because of Transmission does not support proxy
-	out, err := os.Create(file.FileID)
+	out, err := ioutil.TempFile("",file.FileID);
 	if err != nil  {
 		send(bot, fmt.Sprintf("*ERROR*: `%s`", err.Error()), ud.Chat.ID, true)
 		return
@@ -73,7 +73,7 @@ func receiveTorrent(bot telegramClient, client torrentClient, ud messageWrapper,
 	}
 
 	// add by local file
-	addTorrentByFile(bot, client, ud,file.FileID)
+	addTorrentByFile(bot, client, ud,out.Name())
 }
 
 // stop takes id[s] of torrent[s] or 'all' to stop them
