@@ -15,6 +15,14 @@ func (client transmissionClient) AddByURL(url string) (transmission.TorrentAdded
 	return client.client.ExecuteAddCommand(cmd)
 }
 
+func (client transmissionClient) AddByLocalFile(localPath string) (transmission.TorrentAdded, error) {
+	cmd,err := transmission.NewAddCmdByFile(localPath)
+	if (err!=nil){
+		return transmission.TorrentAdded{},err;
+	}
+	return client.client.ExecuteAddCommand(cmd)
+}
+
 func (client transmissionClient) GetStats() (*transmission.Stats, error) {
 	return client.client.GetStats()
 }

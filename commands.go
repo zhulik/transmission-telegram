@@ -7,6 +7,9 @@ import (
 
 	"github.com/zhulik/transmission-telegram/settings"
 	"gopkg.in/telegram-bot-api.v4"
+	"os"
+	"net/http"
+	"io"
 )
 
 var (
@@ -40,9 +43,37 @@ func receiveTorrent(bot telegramClient, client torrentClient, ud messageWrapper,
 		send(bot, fmt.Sprintf("*ERROR*: `%s`", err.Error()), ud.Chat.ID, true)
 		return
 	}
+	// downloading file on Go side (not in Transmission) because of Transmission does not support proxy
+	out, err := os.Create(file.FileID)
+	if err != nil  {
+		send(bot, fmt.Sprintf("*ERROR*: `%s`", err.Error()), ud.Chat.ID, true)
+		return
+	}
+	defer out.Close()
+	defer os.Remove(out.Name())
 
-	// add by file URL
-	addTorrentsByURL(bot, client, ud, []string{file.Link(bot.Token())})
+	// Get the data
+	resp, err := http.Get(file.Link(bot.Token()))
+	if err != nil {
+		send(bot, fmt.Sprintf("*ERROR*: `%s`", err.Error()), ud.Chat.ID, true)
+		return
+	}
+	defer resp.Body.Close()
+
+	// Check server response
+	if resp.StatusCode != http.StatusOK {
+		send(bot, fmt.Sprintf("*ERROR*:bad status:  `%s`", resp.Status), ud.Chat.ID, true)
+	}
+
+	// Writer the body to file
+	_, err = io.Copy(out, resp.Body)
+	if err != nil  {
+		send(bot, fmt.Sprintf("*ERROR*: `%s`", err.Error()), ud.Chat.ID, true)
+		return
+	}
+
+	// add by local file
+	addTorrentByFile(bot, client, ud,file.FileID)
 }
 
 // stop takes id[s] of torrent[s] or 'all' to stop them
@@ -137,6 +168,21 @@ func addTorrentsByURL(bot telegramClient, client torrentClient, ud messageWrappe
 		}
 		send(bot, fmt.Sprintf("*add*: *%d* `%s`", torrent.ID, torrent.Name), ud.Chat.ID, true)
 	}
+}
+
+func addTorrentByFile(bot telegramClient, client torrentClient, ud messageWrapper, fileName string){
+	torrent, err := client.AddByLocalFile(fileName)
+	if err != nil {
+		send(bot, fmt.Sprintf("*add*: `%s`", err.Error()), ud.Chat.ID, true)
+		return
+	}
+
+	// check if torrent.Name is empty, then an error happened
+	if torrent.Name == "" {
+		send(bot, fmt.Sprintf("*add*: error adding `%s`", fileName), ud.Chat.ID, true)
+		return
+	}
+	send(bot, fmt.Sprintf("*add*: *%d* `%s`", torrent.ID, torrent.Name), ud.Chat.ID, true)
 }
 
 // add takes an URL to a .torrent file in message to add it to transmission
