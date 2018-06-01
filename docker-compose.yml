@@ -1,0 +1,37 @@
+version: '2'
+services:
+  transmission:
+    container_name: transmission
+    hostname: transmission
+    image: linuxserver/transmission
+    ports:
+      - 9091:9091/tcp
+      - 51413:51413/tcp
+      - 51413:51413/udp
+    volumes:
+      - /mypath/transmission-config:/config
+      - /mypath/downloads:/downloads
+    environment:
+      - PGID=1000
+      - PUID=1000
+      - TZ=Europe/Moscow
+
+  transmission-telegram:
+    container_name: transmission-telegram
+    hostname: transmission-telegram
+    build: .
+    environment:
+    # proxy support in case if Telegram is blocked in your country (in Russia for example)
+    #  - HTTP_PROXY=user:password@host:port
+    # transmission is in local network, we do not use the proxy
+    #  - NO_PROXY=transmission
+    # your bot token, passed to -token CLI argument
+      - BOT_TOKEN=123456789:MyToken
+    # your master users, passed to -master CLI argument
+      - MASTERS=@myuser
+    # URL of transmission service, here it refers to transmission service above
+      - TRANSMISSION_URL=http://transmission:9091/transmission/rpc
+    # optional for transmission rpc auth
+      - TRANSMISSION_USERNAME=myuser
+      - TRANSMISSION_PASSWORD=mypass
+      - TZ=Europe/Moscow
