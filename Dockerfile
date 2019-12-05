@@ -1,4 +1,4 @@
-FROM golang:1.8
+FROM golang:1.13.4
 
 RUN mkdir -p ./src/github.com/zhulik/transmission-telegram
 
