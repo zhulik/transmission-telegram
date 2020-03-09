@@ -31,6 +31,7 @@ type torrentClient interface {
 	GetTorrent(int) (*transmission.Torrent, error)
 	GetStats() (*transmission.Stats, error)
 	AddByURL(url string) (transmission.TorrentAdded, error)
+	AddByLocalFile(path string) (transmission.TorrentAdded, error)
 	SetSort(transmission.Sorting)
 
 	Version() string
